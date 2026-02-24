@@ -1,13 +1,31 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package domain.entities;
 
-/**
- *
- * @author Rabuno
- */
+import java.time.LocalDateTime;
+
 public class AuditLog {
-    
+    private String auditId;
+    private String actorUserId;
+    private String action;
+    private String diffJson;
+    private String previousHash;
+    private String currentHash;
+    private LocalDateTime timestamp;
+
+    public AuditLog(String auditId, String actorUserId, String action, String diffJson, String previousHash) {
+        this.auditId = auditId;
+        this.actorUserId = actorUserId;
+        this.action = action;
+        this.diffJson = diffJson;
+        this.previousHash = previousHash;
+        this.timestamp = LocalDateTime.now();
+    }
+
+    // Getters & Setters
+    public String getAuditId() { return auditId; }
+    public String getActorUserId() { return actorUserId; }
+    public String getAction() { return action; }
+    public String getPreviousHash() { return previousHash; }
+    public String getCurrentHash() { return currentHash; }
+    public void setCurrentHash(String currentHash) { this.currentHash = currentHash; }
+    public String getDiffJson() { return diffJson; }
 }
