@@ -22,10 +22,19 @@ public class AuditLog {
 
     // Getters & Setters
     public String getAuditId() { return auditId; }
+    
     public String getActorUserId() { return actorUserId; }
+    
     public String getAction() { return action; }
-    public String getPreviousHash() { return previousHash; }
-    public String getCurrentHash() { return currentHash; }
-    public void setCurrentHash(String currentHash) { this.currentHash = currentHash; }
+    
     public String getDiffJson() { return diffJson; }
+    
+    public String getPreviousHash() { return previousHash; }
+    
+    public String getCurrentHash() { return currentHash; }
+    
+    public LocalDateTime getTimestamp() { return timestamp; }
+
+    // --- Setter duy nhất cho currentHash (được AuditService tính toán sau) ---
+    public void setCurrentHash(String currentHash) { this.currentHash = currentHash; }
 }
