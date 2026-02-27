@@ -20,7 +20,7 @@
                 <div class="alert alert-danger small">${requestScope.ERROR}</div>
             </c:if>
 
-            <form action="LoginController" method="POST">
+            <form action="LoginServlet" method="POST">
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Tên đăng nhập</label>
                     <input type="text" name="txtUsername" class="form-control" required placeholder="Nhập username...">

@@ -57,7 +57,7 @@ public class LoginServlet extends HttpServlet {
         } catch (Exception e) {
             // Xác thực thất bại, trả về lỗi cho giao diện
             request.setAttribute("ERROR", e.getMessage());
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
         }
     }
 }
