@@ -1,13 +1,22 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package application.services;
 
-/**
- *
- * @author Rabuno
- */
+import domain.entities.Review;
+import domain.enums.ReviewStatus;
+import infrastructure.persistence.SqlReviewDAO;
+
+import java.util.List;
+
 public class ReviewService {
-    
+
+    private final SqlReviewDAO reviewDAO = new SqlReviewDAO();
+
+    // Lấy danh sách review cần moderation
+    public List<Review> getFlaggedReviews() {
+        return reviewDAO.findByStatus(ReviewStatus.FLAGGED);
+    }
+
+    // Moderator xử lý review
+    public void moderateReview(String reviewId, ReviewStatus newStatus) {
+        reviewDAO.updateStatus(reviewId, newStatus);
+    }
 }
