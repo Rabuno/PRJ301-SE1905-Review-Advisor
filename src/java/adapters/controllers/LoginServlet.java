@@ -43,14 +43,14 @@ public class LoginServlet extends HttpServlet {
                 case MODERATOR:
                 case AUDITOR:
                     // Chuyển hướng đến khu vực quản trị
-                    response.sendRedirect(request.getContextPath() + "/views/moderator/dashboard.jsp");
+                    response.sendRedirect(request.getContextPath() + "/MainController");
                     break;
                 case ADMIN:
                 case MERCHANT:
                 case CUSTOMER:
                 default:
                     // Chuyển hướng đến trang chủ
-                    response.sendRedirect(request.getContextPath() + "/views/customer/index.jsp");
+                    response.sendRedirect(request.getContextPath() + "/MainController");
                     break;
             }
 
