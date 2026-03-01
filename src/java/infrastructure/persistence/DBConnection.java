@@ -8,7 +8,7 @@ public class DBConnection {
     // URL kết nối tới SQL Server 2019
     private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=ReviewPlatform;trustServerCertificate=true;";
     private static final String USER = "sa";
-    private static final String PASSWORD = "123456";
+    private static final String PASSWORD = "12345";
 
     static {
         try {

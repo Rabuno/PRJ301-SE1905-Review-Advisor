@@ -41,4 +41,7 @@ public class Review {
     public int getRating() { return rating; }
     public ReviewStatus getStatus() { return status; }
     public void setStatus(ReviewStatus status) { this.status = status; }
+    public String getProductId() { return productId; }
+    public String getUserId() { return userId; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }
