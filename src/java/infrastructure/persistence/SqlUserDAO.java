@@ -2,35 +2,60 @@ package infrastructure.persistence;
 
 import application.ports.IUserRepository;
 import domain.entities.User;
-import domain.enums.RoleType;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SqlUserDAO implements IUserRepository {
 
     @Override
-    public User findByUsername(String username) {
-        String sql = "SELECT user_id, username, password, role FROM Users WHERE username = ?";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+public User findByUsername(String username) {
 
-            stmt.setString(1, username);
-            try ( ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    // Chuyển đổi chuỗi role từ SQL thành Enum RoleType
-                    RoleType role = RoleType.valueOf(rs.getString("role").toUpperCase());
-                    User user = new User(
+    String sql =
+            "SELECT u.user_id, u.username, u.password, u.role, p.permission_code " +
+            "FROM Users u " +
+            "INNER JOIN Roles r ON u.role = r.role_id " +
+            "INNER JOIN RolePerm rp ON r.role_id = rp.role_id " +
+            "INNER JOIN Permissions p ON rp.permission_id = p.permission_id " +
+            "WHERE u.username = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setString(1, username);
+
+        try (ResultSet rs = stmt.executeQuery()) {
+
+            User user = null;
+            List<String> permissions = new ArrayList<>();
+
+            while (rs.next()) {
+
+                if (user == null) {
+                    user = new User(
                             rs.getString("user_id"),
                             rs.getString("username"),
-                            rs.getString("password"),
-                            role
+                            rs.getString("password")
                     );
-                    return user;
                 }
+
+                permissions.add(rs.getString("permission_code"));
             }
-        } catch (Exception e) {
-            e.printStackTrace(); // Cần thay bằng hệ thống logging thực tế
+
+            if (user != null) {
+                user.setPermissions(permissions);
+
+                System.out.println("User: " + username);
+                System.out.println("Permissions: " + permissions);
+
+                return user;
+            }
         }
-        return null; // Không tìm thấy tài khoản
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+
+    return null;
+}
 }
