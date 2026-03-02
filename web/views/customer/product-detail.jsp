@@ -1,31 +1,39 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@include file="../../common/header.jsp" %>
-<div class="container">
+
+<div class="container mt-4 mb-5">
     <div class="row">
         <div class="col-md-7">
-            <h3>Chi ti?t Khách s?n</h3>
-            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945" class="img-fluid rounded mb-3" alt="Hotel">
-            <p>Mô t? chi ti?t v? khách s?n Majestic Saigon. D?ch v? ??ng c?p 5 sao ngay t?i trung tâm thành ph?.</p>
+            <h3 class="mb-3">Hotel Details</h3>
+            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945" class="img-fluid rounded mb-3 shadow-sm" alt="Hotel Image">
+            <p class="text-muted">
+                Experience world-class service right in the heart of the city. We provide top-tier amenities, comfortable rooms, and breathtaking views to make your stay unforgettable.
+            </p>
         </div>
         
         <div class="col-md-5">
-            <div class="card shadow-sm border-0 p-3 bg-light">
-                <h4>?ánh giá t? c?ng ??ng</h4>
-                <hr>
-                <div class="review-item mb-3 p-2 bg-white rounded shadow-sm">
-                    <div class="d-flex justify-content-between">
-                        <strong>Anh Khoa</strong>
-                        <span class="verified-badge">? ?ã xác minh</span>
+            <div class="card shadow-sm border-0 p-4 bg-light">
+                <h4 class="mb-3">Community Reviews</h4>
+                <hr class="mt-0 mb-4">
+                
+                <div class="review-item mb-3 p-3 bg-white rounded shadow-sm border-start border-4 border-success">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-dark">Anh Khoa</strong>
+                        <span class="verified-badge">âœ“ Verified</span>
                     </div>
-                    <div class="text-warning small mb-1">?????</div>
-                    <p class="small mb-0">D?ch v? tuy?t v?i, phòng ?c r?t s?ch s?!</p>
+                    <div class="text-warning small mb-2">â˜…â˜…â˜…â˜…â˜…</div>
+                    <p class="small mb-0 text-muted">"Excellent service, the rooms were very clean and the staff was extremely friendly!"</p>
                 </div>
                 
-                <div class="mt-3 text-center">
-                    <a href="views/customer/write-review.jsp?id=H001" class="btn btn-success w-100">Vi?t ?ánh giá c?a b?n</a>
+                <div class="mt-4 text-center">
+                    <a href="views/customer/write-review.jsp?id=${param.id != null ? param.id : 'H001'}" class="btn btn-success w-100 py-2 fw-bold">
+                        Write a Review
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-</body>
-</html>
+
+<%@include file="../../common/footer.jsp" %>
