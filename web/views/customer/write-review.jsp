@@ -1,35 +1,39 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@include file="../../common/header.jsp" %>
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow p-4">
-                <h3 class="text-center mb-4">Chia s? tr?i nghi?m c?a b?n</h3>
-                <form action="CreateController" method="POST">
+                <h3 class="text-center mb-4">Share Your Experience</h3>
+                <form action="ReviewServlet" method="POST">
                     <input type="hidden" name="productId" value="${param.id}">
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Ch?m ?i?m (1-5 sao)</label>
+                        <label class="form-label fw-bold">Rating (1-5 Stars)</label>
                         <select name="rating" class="form-select" required>
-                            <option value="5">5 sao - Tuy?t v?i</option>
-                            <option value="4">4 sao - T?t</option>
-                            <option value="3">3 sao - Bình th??ng</option>
-                            <option value="2">2 sao - Kém</option>
-                            <option value="1">1 sao - R?t t?</option>
+                            <option value="5">5 Stars - Excellent</option>
+                            <option value="4">4 Stars - Good</option>
+                            <option value="3">3 Stars - Average</option>
+                            <option value="2">2 Stars - Poor</option>
+                            <option value="1">1 Star - Terrible</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">N?i dung ?ánh giá</label>
+                        <label class="form-label fw-bold">Review Content</label>
                         <textarea id="reviewContent" name="content" class="form-control" rows="5" 
-                                  placeholder="Hãy chia s? th?t tâm ?? AI c?a chúng tôi ghi nh?n chính xác nh?t..." required></textarea>
+                                  placeholder="Share your honest thoughts for our AI to analyze..." required></textarea>
                     </div>
 
                     <div class="p-3 bg-light rounded border mb-3">
-                        <p class="text-muted small fw-bold mb-1">XEM TR??C (PREVIEW):</p>
-                        <div id="previewArea" class="small italic text-secondary">Vui lòng nh?p n?i dung ?? xem tr??c...</div>
+                        <p class="text-muted small fw-bold mb-1">LIVE PREVIEW:</p>
+                        <div id="previewArea" class="small fst-italic text-secondary">Please enter your review to see the preview...</div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2">G?i ?ánh giá</button>
+                    <button type="submit" class="btn btn-primary w-100 py-2">Submit Review</button>
+                    <p class="text-muted mt-2 text-center" style="font-size: 0.75rem;">
+                        * Your review will be analyzed by our AI Triage system before being published.
+                    </p>
                 </form>
             </div>
         </div>
@@ -44,9 +48,8 @@
         if (this.value.trim().length > 0) {
             previewArea.innerHTML = `<span class="text-dark">"${this.value}"</span>`;
         } else {
-            previewArea.innerHTML = "Vui lòng nh?p n?i dung ?? xem tr??c...";
+            previewArea.innerHTML = "Please enter your review to see the preview...";
         }
     });
 </script>
-</body>
-</html>
+<%@include file="../../common/footer.jsp" %>
