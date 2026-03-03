@@ -32,11 +32,11 @@ public class RoleFilter implements Filter {
             return;
         }
 
-        if (user.getRole() != RoleType.MODERATOR) {
+        if (!user.hasPermission("PERM_MODERATE_ACTION")) {
     res.sendRedirect(req.getContextPath() + "/views/shared/accessDenied.jsp");
     return;
 }
-
+        
         chain.doFilter(request, response);
     }
 }

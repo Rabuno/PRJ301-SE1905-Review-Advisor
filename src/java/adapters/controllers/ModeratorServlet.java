@@ -1,5 +1,6 @@
 package adapters.controllers;
 
+
 import application.services.ReviewService;
 import domain.entities.Review;
 import domain.enums.ReviewStatus;
@@ -67,5 +68,6 @@ public class ModeratorServlet extends HttpServlet {
             request.setAttribute("ERROR", "Lỗi xử lý kiểm duyệt: " + e.getMessage());
             request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
         }
+
     }
 }

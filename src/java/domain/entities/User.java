@@ -1,23 +1,34 @@
 package domain.entities;
 
-import domain.enums.RoleType;
+
+import java.util.List;
 
 public class User {
     private String userId;
     private String username;
     private String password;
-    private RoleType role;
+    private List<String> permissions;
 
-    public User(String userId, String username, String password, RoleType role) {
-        this.userId = userId;
-        this.username = username;
-        this.password = password;
-        this.role = role;
-    }
+public User(String userId, String username, String password) {
+    this.userId = userId;
+    this.username = username;
+    this.password = password;
+}
     // Getters
     public String getUserId() { return userId; }
     public String getUsername() { return username; }
-    public RoleType getRole() { return role; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+    
+    public List<String> getPermissions() {
+    return permissions;
+}
+
+public void setPermissions(List<String> permissions) {
+    this.permissions = permissions;
+}
+
+public boolean hasPermission(String permission) {
+    return permissions != null && permissions.contains(permission);
+}
 }
