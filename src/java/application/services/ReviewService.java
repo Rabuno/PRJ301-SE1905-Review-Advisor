@@ -1,7 +1,5 @@
 package application.services;
 
-import application.ports.IAIService;
-import application.ports.IReviewRepository;
 import domain.entities.Review;
 import domain.enums.ReviewStatus;
 import infrastructure.persistence.SqlReviewDAO;
