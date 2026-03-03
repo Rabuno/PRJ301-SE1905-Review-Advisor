@@ -15,22 +15,22 @@ CREATE TABLE Products (
 );
 CREATE TABLE Reviews (
     review_id VARCHAR(50) PRIMARY KEY, 
-product_id VARCHAR(50) NOT NULL, 
-user_id VARCHAR(50) NOT NULL, 
-rating INT CHECK (rating >= 1 AND rating <= 5), 
-content NVARCHAR(MAX), 
-status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PUBLISHED', 'HIDDEN', 'FLAGGED')), 
-created_at DATETIME DEFAULT GETDATE(), updated_at DATETIME DEFAULT GETDATE(), FOREIGN KEY (product_id) REFERENCES Products(product_id), 
-FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    product_id VARCHAR(50) NOT NULL, 
+    user_id VARCHAR(50) NOT NULL, 
+    rating INT CHECK (rating >= 1 AND rating <= 5), 
+    content NVARCHAR(MAX), 
+    status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PUBLISHED', 'HIDDEN', 'FLAGGED')), 
+    created_at DATETIME DEFAULT GETDATE(), updated_at DATETIME DEFAULT GETDATE(), FOREIGN KEY (product_id) REFERENCES Products(product_id), 
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 CREATE TABLE AuditLog (
     audit_id VARCHAR(50) PRIMARY KEY, 
-actor_user_id VARCHAR(50) NOT NULL, 
-action VARCHAR(100) NOT NULL, 
-diff_json NVARCHAR(MAX), 
-previous_hash VARCHAR(64) NOT NULL, 
-current_hash VARCHAR(64) NOT NULL, 
-timestamp DATETIME DEFAULT GETDATE()
+    actor_user_id VARCHAR(50) NOT NULL, 
+    action VARCHAR(100) NOT NULL, 
+    diff_json NVARCHAR(MAX), 
+    previous_hash VARCHAR(64) NOT NULL, 
+    current_hash VARCHAR(64) NOT NULL, 
+    timestamp DATETIME DEFAULT GETDATE()
 );
 
 CREATE TABLE Alerts (
