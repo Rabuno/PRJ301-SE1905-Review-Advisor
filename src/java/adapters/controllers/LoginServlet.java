@@ -9,7 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-@WebServlet(name = "LoginServlet", urlPatterns = {"/LoginServlet"})
+@WebServlet(name = "LoginServlet", urlPatterns = { "/LoginServlet" })
 public class LoginServlet extends HttpServlet {
 
     private AuthService authService;
@@ -32,7 +32,6 @@ public class LoginServlet extends HttpServlet {
             HttpSession session = request.getSession();
             session.setAttribute("USER", authenticatedUser);
 
-            // Redirect dựa vào permission
             if (authenticatedUser.hasPermission("PERM_MODERATE_ACTION")) {
                 response.sendRedirect(request.getContextPath() + "/ModeratorServlet");
             } else {

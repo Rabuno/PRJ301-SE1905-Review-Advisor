@@ -9,53 +9,117 @@ import java.util.List;
 public class SqlUserDAO implements IUserRepository {
 
     @Override
-public User findByUsername(String username) {
+    public User findByUsername(String username) {
 
-    String sql =
-            "SELECT u.user_id, u.username, u.password, u.role, p.permission_code " +
-            "FROM Users u " +
-            "INNER JOIN Roles r ON u.role = r.role_id " +
-            "INNER JOIN RolePerm rp ON r.role_id = rp.role_id " +
-            "INNER JOIN Permissions p ON rp.permission_id = p.permission_id " +
-            "WHERE u.username = ?";
+        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, p.permission_code " +
+                "FROM Users u " +
+                "INNER JOIN Roles r ON u.role_id = r.role_id " +
+                "LEFT JOIN RolePerm rp ON r.role_id = rp.role_id " +
+                "LEFT JOIN Permissions p ON rp.permission_id = p.permission_id " +
+                "WHERE u.username = ?";
 
-    try (Connection conn = DBConnection.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        stmt.setString(1, username);
+            stmt.setString(1, username);
 
-        try (ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
 
-            User user = null;
-            List<String> permissions = new ArrayList<>();
+                User user = null;
+                List<String> permissions = new ArrayList<>();
 
-            while (rs.next()) {
+                while (rs.next()) {
 
-                if (user == null) {
-                    user = new User(
-                            rs.getString("user_id"),
-                            rs.getString("username"),
-                            rs.getString("password")
-                    );
+                    if (user == null) {
+                        user = new User(
+                                rs.getString("user_id"),
+                                rs.getString("username"),
+                                rs.getString("password"));
+                    }
+
+                    String perm = rs.getString("permission_code");
+                    if (perm != null) {
+                        permissions.add(perm);
+                    }
                 }
 
-                permissions.add(rs.getString("permission_code"));
+                if (user != null) {
+                    user.setPermissions(permissions);
+
+                    System.out.println("User: " + username);
+                    System.out.println("Permissions: " + permissions);
+
+                    return user;
+                }
             }
 
-            if (user != null) {
-                user.setPermissions(permissions);
-
-                System.out.println("User: " + username);
-                System.out.println("Permissions: " + permissions);
-
-                return user;
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return null;
     }
 
-    return null;
-}
+    @Override
+    public boolean registerUser(User user, String roleName) {
+        String sql = "INSERT INTO Users (user_id, username, password, role_id) " +
+                "VALUES (?, ?, ?, (SELECT role_id FROM Roles WHERE role_name = ?))";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, user.getUserId());
+            stmt.setString(2, user.getUsername());
+            stmt.setString(3, user.getPassword());
+            stmt.setString(4, roleName);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT user_id, username, password, role_id FROM Users";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                users.add(new User(
+                        rs.getString("user_id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("role_id")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    @Override
+    public boolean updateUserRole(String userId, String roleId) {
+        String sql = "UPDATE Users SET role_id = ? WHERE user_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, roleId);
+            stmt.setString(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -12,17 +12,33 @@ public class AuthService {
 
     public User authenticate(String username, String rawPassword) throws Exception {
         User user = userRepository.findByUsername(username);
-        
+
         if (user == null) {
             throw new Exception("Tài khoản không tồn tại.");
         }
-        
-        // Trong môi trường production, rawPassword cần được băm và so sánh với mã băm trong DB.
-        // Hiện tại dùng string equals cho mức độ nguyên mẫu (prototype).
-        if (!user.getPassword().equals(rawPassword)) {
+
+        String hashedPassword = infrastructure.security.HashUtil.generateSHA256(rawPassword);
+
+        if (!user.getPassword().equals(hashedPassword)) {
             throw new Exception("Sai mật khẩu.");
         }
-        
+
         return user;
+    }
+
+    public boolean processRegistration(String username, String password, boolean isMerchant) throws Exception {
+        if (userRepository.findByUsername(username) != null) {
+            throw new Exception("Tên đăng nhập đã tồn tại.");
+        }
+
+        String userId = java.util.UUID.randomUUID().toString();
+
+        String hashedPassword = infrastructure.security.HashUtil.generateSHA256(password);
+
+        User newUser = new User(userId, username, hashedPassword);
+
+        String roleName = isMerchant ? "MERCHANT" : "CUSTOMER";
+
+        return userRepository.registerUser(newUser, roleName);
     }
 }
