@@ -37,4 +37,11 @@ dist/
 nbdist/
 .nb-gradle/
 
+# NetBeans specific
+nbproject/private/
+nbbuild/
+dist/
+build/
+nbproject/genfiles.properties
+
 # End of https://www.toptal.com/developers/gitignore/api/java,netbeans

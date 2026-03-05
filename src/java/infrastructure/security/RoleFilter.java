@@ -7,7 +7,7 @@ import javax.servlet.http.*;
 import domain.entities.User;
 import domain.enums.RoleType;
 
-@WebFilter(urlPatterns = {"/views/moderation/*"})
+@WebFilter(urlPatterns = { "/*" })
 public class RoleFilter implements Filter {
 
     @Override
@@ -17,25 +17,38 @@ public class RoleFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
+        String uri = req.getRequestURI();
+        String contextPath = req.getContextPath();
+
+        if (uri.startsWith(contextPath + "/assets") ||
+                uri.startsWith(contextPath + "/css") ||
+                uri.endsWith("login.jsp") ||
+                uri.endsWith("register.jsp") ||
+                uri.endsWith("LoginServlet") ||
+                uri.endsWith("RegisterServlet")) {
+
+            chain.doFilter(request, response);
+            return;
+        }
+
         HttpSession session = req.getSession(false);
 
-        if (session == null) {
-            res.sendRedirect(req.getContextPath() + "/login.jsp");
+        if (session == null || session.getAttribute("USER") == null) {
+            res.sendRedirect(contextPath + "/login.jsp");
             return;
         }
 
-        
         User user = (User) session.getAttribute("USER");
 
-        if (user == null) {
-            res.sendRedirect(req.getContextPath() + "/login.jsp");
+        if (uri.contains("/ModeratorServlet") && !user.hasPermission("PERM_MODERATE_ACTION")) {
+            res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
             return;
         }
 
-        if (user.getRole() != RoleType.MODERATOR) {
-    res.sendRedirect(req.getContextPath() + "/views/shared/accessDenied.jsp");
-    return;
-}
+        if (uri.contains("/AuditServlet") && !user.hasPermission("PERM_AUDIT_READ")) {
+            res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
+            return;
+        }
 
         chain.doFilter(request, response);
     }
