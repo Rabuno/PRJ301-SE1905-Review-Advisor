@@ -21,7 +21,7 @@
                 <div class="alert alert-danger small">${requestScope.ERROR}</div>
             </c:if>
 
-            <form action="LoginServlet" method="POST">
+            <form action="${pageContext.request.contextPath}/LoginServlet" method="POST">
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Username</label>
                     <input type="text" name="txtUsername" class="form-control" required placeholder="Enter username...">
@@ -33,11 +33,11 @@
                 <button type="submit" class="btn btn-success w-100 py-2">Sign In</button>
             </form>
             <div class="mt-3 text-center">
-                <a href="MainController" class="text-muted small text-decoration-none">&larr; Back to Home</a>
+                <a href="${pageContext.request.contextPath}/MainController" class="text-muted small text-decoration-none">&larr; Back to Home</a>
             </div>
              <div class="mt-3 text-center">
                 <span class="text-muted small">Don't have an account? </span>
-                <a href="register.jsp" class="text-success small fw-bold text-decoration-none">Register</a>
+                <a href="${pageContext.request.contextPath}/register.jsp" class="text-success small fw-bold text-decoration-none">Register</a>
             </div>    
         </div>
     </div>
