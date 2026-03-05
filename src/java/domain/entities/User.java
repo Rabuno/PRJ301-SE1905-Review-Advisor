@@ -7,6 +7,7 @@ public class User {
     private String username;
     private String password;
     private String roleId;
+    private String role;
     private List<String> permissions;
 
     public User(String userId, String username, String password) {
@@ -45,6 +46,14 @@ public class User {
 
     public void setRoleId(String roleId) {
         this.roleId = roleId;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public List<String> getPermissions() {
