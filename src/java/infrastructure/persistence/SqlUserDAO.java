@@ -11,7 +11,11 @@ public class SqlUserDAO implements IUserRepository {
     @Override
     public User findByUsername(String username) {
 
+<<<<<<< HEAD
         String sql = "SELECT u.user_id, u.username, u.password, u.role_id, p.permission_code " +
+=======
+        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, r.role_name, p.permission_code " +
+>>>>>>> c4df0400614ac4ae40671795dbe5ab25b2f48250
                 "FROM Users u " +
                 "INNER JOIN Roles r ON u.role_id = r.role_id " +
                 "LEFT JOIN RolePerm rp ON r.role_id = rp.role_id " +
@@ -35,6 +39,11 @@ public class SqlUserDAO implements IUserRepository {
                                 rs.getString("user_id"),
                                 rs.getString("username"),
                                 rs.getString("password"));
+<<<<<<< HEAD
+=======
+                        user.setRoleId(rs.getString("role_id"));
+                        user.setRole(rs.getString("role_name"));
+>>>>>>> c4df0400614ac4ae40671795dbe5ab25b2f48250
                     }
 
                     String perm = rs.getString("permission_code");

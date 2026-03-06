@@ -18,6 +18,7 @@
     </div>
 
     <div class="row">
+<<<<<<< HEAD
         <c:choose>
             <c:when test="${not empty requestScope.PRODUCT_LIST}">
                 <c:forEach var="product" items="${requestScope.PRODUCT_LIST}">
@@ -39,6 +40,20 @@
                                 </div>
                             </div>
                         </div>
+=======
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm card-product border-0">
+                <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945" class="card-img-top" alt="Hotel Image" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-dark mb-1">Majestic Saigon Hotel</h5>
+                    <p class="text-muted small mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> District 1, Ho Chi Minh City</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-warning fw-bold">4.8 ★</span>
+                            <span class="text-muted small">(120 verified reviews)</span>
+                        </div>
+                        <a href="${pageContext.request.contextPath}/MainController?action=ViewDetail&id=H001" class="btn btn-sm btn-outline-primary fw-bold">View Details</a>
+>>>>>>> c4df0400614ac4ae40671795dbe5ab25b2f48250
                     </div>
                 </c:forEach>
             </c:when>
@@ -46,8 +61,30 @@
                 <div class="col-12 text-center py-5">
                     <h5 class="text-muted">No products available at the moment. Please check back later!</h5>
                 </div>
+<<<<<<< HEAD
             </c:otherwise>
         </c:choose>
+=======
+            </div>
+        </div>
+        
+        <c:forEach var="product" items="${requestScope.PRODUCT_LIST}">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm card-product border-0">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold text-dark mb-1">${product.name}</h5>
+                        <p class="text-muted small mb-3">${product.location}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-warning fw-bold">${product.averageRating} ★</span>
+                            </div>
+                            <a href="${pageContext.request.contextPath}/MainController?action=ViewDetail&id=${product.productId}" class="btn btn-sm btn-outline-primary fw-bold">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </c:forEach>
+>>>>>>> c4df0400614ac4ae40671795dbe5ab25b2f48250
     </div>
 </div>
 
