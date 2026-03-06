@@ -18,44 +18,60 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th scope="col" class="ps-4">Hotel/Service</th>
+                                    <th scope="col" class="ps-4">Product ID</th>
                                     <th scope="col">Rating</th>
-                                    <th scope="col" style="width: 40%;">Your Review</th>
+                                    <th scope="col" style="width: 35%;">Your Review</th>
                                     <th scope="col">Date Submitted</th>
                                     <th scope="col" class="text-center">Status</th>
+                                    <th scope="col" class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td class="ps-4 fw-bold">Majestic Saigon</td>
-                                    <td class="text-warning">★★★★★</td>
-                                    <td class="text-muted small">"Excellent service, very clean!"</td>
-                                    <td class="small">Oct 25, 2026</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-success">PUBLISHED</span>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="ps-4 fw-bold">Rex Hotel</td>
-                                    <td class="text-warning">★★★★☆</td>
-                                    <td class="text-muted small">"Good location, but breakfast could be better."</td>
-                                    <td class="small">Oct 26, 2026</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-warning text-dark">PENDING</span>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="ps-4 fw-bold">Ocean View Villa</td>
-                                    <td class="text-warning">★★★★★</td>
-                                    <td class="text-muted small">"BEST HOTEL EVER CLICK HERE TO GET DISCOUNT http://spam-link.com"</td>
-                                    <td class="small">Oct 27, 2026</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-danger">FLAGGED</span>
-                                        <div class="text-danger small mt-1" style="font-size: 0.7rem;">AI Detected: Spam/Promo</div>
-                                    </td>
-                                </tr>
+                                <c:choose>
+                                    <c:when test="${not empty requestScope.MY_REVIEWS}">
+                                        <c:forEach var="r" items="${requestScope.MY_REVIEWS}">
+                                            <tr>
+                                                <td class="ps-4 fw-bold">${r.productId}</td>
+                                                <td class="text-warning">${r.rating} ★</td>
+                                                <td class="text-muted small">"${r.content}"</td>
+                                                <td class="small">${r.createdAt}</td>
+                                                <td class="text-center">
+                                                    <c:choose>
+                                                        <c:when test="${r.status eq 'PUBLISHED'}">
+                                                            <span class="badge bg-success">PUBLISHED</span>
+                                                        </c:when>
+                                                        <c:when test="${r.status eq 'FLAGGED'}">
+                                                            <span class="badge bg-danger">FLAGGED</span>
+                                                            <div class="text-danger small mt-1" style="font-size: 0.7rem;">AI Detected Risk</div>
+                                                        </c:when>
+                                                        <c:when test="${r.status eq 'HIDDEN'}">
+                                                            <span class="badge bg-secondary">HIDDEN</span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="badge bg-warning text-dark">${r.status}</span>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="${pageContext.request.contextPath}/ReviewServlet?action=edit&reviewId=${r.reviewId}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                                    
+                                                    <form action="${pageContext.request.contextPath}/ReviewServlet" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this review?');">
+                                                        <input type="hidden" name="action" value="delete">
+                                                        <input type="hidden" name="reviewId" value="${r.reviewId}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        </c:forEach>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-5">
+                                                <span class="fs-5">You haven't written any reviews yet.</span>
+                                            </td>
+                                        </tr>
+                                    </c:otherwise>
+                                </c:choose>
                             </tbody>
                         </table>
                     </div>

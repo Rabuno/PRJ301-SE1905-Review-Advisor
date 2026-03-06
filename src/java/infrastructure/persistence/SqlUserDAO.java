@@ -10,7 +10,6 @@ public class SqlUserDAO implements IUserRepository {
 
     @Override
     public User findByUsername(String username) {
-
         String sql = "SELECT u.user_id, u.username, u.password, u.role_id, r.role_name, p.permission_code " +
                 "FROM Users u " +
                 "INNER JOIN Roles r ON u.role_id = r.role_id " +
