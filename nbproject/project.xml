@@ -19,6 +19,13 @@
                     <path-in-war>WEB-INF/lib</path-in-war>
                 </library>
                 <library dirs="200">
+<<<<<<< HEAD
+=======
+                    <file>${file.reference.weka-src.jar}</file>
+                    <path-in-war>WEB-INF/lib</path-in-war>
+                </library>
+                <library dirs="200">
+>>>>>>> main
                     <file>${file.reference.weka.jar}</file>
                     <path-in-war>WEB-INF/lib</path-in-war>
                 </library>

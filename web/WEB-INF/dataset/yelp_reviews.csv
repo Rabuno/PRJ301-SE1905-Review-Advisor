@@ -1,0 +1,8 @@
+review_text,rating,account_age,class_label
+"Sản phẩm rất tốt giao hàng nhanh",5.0,120.0,ham
+"Chất lượng tạm ổn dùng được",4.0,50.0,ham
+"Lừa đảo chắc chắn là hàng fake cam kết hoàn tiền",1.0,2.0,spam
+"Tuyệt vời sẽ ủng hộ shop tiếp",5.0,200.0,ham
+"Đừng mua rác rưởi tốn tiền giả mạo",1.0,5.0,spam
+"Sản phẩm y hình đóng gói cẩn thận",5.0,80.0,ham
+"Tuyển người nhận đánh giá cam kết hoa hồng",5.0,1.0,spam

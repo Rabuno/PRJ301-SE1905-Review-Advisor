@@ -1,10 +1,12 @@
 package adapters.controllers;
 
+import application.ports.IAlertRepository;
 import application.services.ReviewService;
 import domain.entities.Review;
 import domain.entities.User;
 import domain.enums.ReviewStatus;
 import infrastructure.ai.WekaProvider;
+import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlReviewDAO;
 
 import java.io.IOException;
@@ -15,16 +17,31 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet(name = "ModeratorServlet", urlPatterns = { "/ModeratorServlet" })
+@WebServlet(name = "ModeratorServlet", urlPatterns = {"/ModeratorServlet"})
 public class ModeratorServlet extends HttpServlet {
 
     private ReviewService reviewService;
 
+    // Tại hàm init() của ModeratorServlet.java
     @Override
-    public void init() throws ServletException {
-        SqlReviewDAO reviewDAO = new SqlReviewDAO();
-        WekaProvider aiProvider = new WekaProvider();
-        this.reviewService = new ReviewService(reviewDAO, aiProvider);
+    public void init() throws javax.servlet.ServletException {
+        try {
+            application.ports.IReviewRepository reviewDAO = new infrastructure.persistence.SqlReviewDAO();
+            application.ports.IUserRepository userDAO = new infrastructure.persistence.SqlUserDAO();
+
+            // Dummy AlertDAO cho đến khi có DB thật
+            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+
+            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
+            application.services.TriageService triageService = new application.services.TriageService(new infrastructure.ai.WekaProvider(modelPath));
+
+            // Khởi tạo thành công
+            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+
+        } catch (Exception e) {
+            throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());
+        }
     }
 
     @Override

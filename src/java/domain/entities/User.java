@@ -1,5 +1,6 @@
 package domain.entities;
 
+import java.util.Date;
 import java.util.List;
 
 public class User {
@@ -10,6 +11,7 @@ public class User {
     private String roleId;
     private String role;
     private List<String> permissions;
+    private Date createdAt;
 
     public User(String userId, String username, String password) {
         this.userId = userId;
@@ -68,4 +70,15 @@ public class User {
     public boolean hasPermission(String permission) {
         return permissions != null && permissions.contains(permission);
     }
+<<<<<<< HEAD
+=======
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+>>>>>>> main
 }

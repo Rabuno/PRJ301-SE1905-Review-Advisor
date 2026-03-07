@@ -1,10 +1,17 @@
 package adapters.controllers;
 
+import application.ports.IAlertRepository;
+import application.ports.IReviewRepository;
+import application.ports.IUserRepository;
 import application.services.ReviewService;
+import application.services.TriageService;
+import domain.entities.Alert;
 import domain.entities.Review;
 import domain.entities.User;
 import infrastructure.ai.WekaProvider;
+import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlReviewDAO;
+import infrastructure.persistence.SqlUserDAO;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -14,16 +21,31 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "ReviewServlet", urlPatterns = { "/ReviewServlet" })
+@WebServlet(name = "ReviewServlet", urlPatterns = {"/ReviewServlet"})
 public class ReviewServlet extends BaseServlet {
 
     private ReviewService reviewService;
 
     @Override
     public void init() throws ServletException {
-        SqlReviewDAO reviewDAO = new SqlReviewDAO();
-        WekaProvider aiProvider = new WekaProvider();
-        this.reviewService = new ReviewService(reviewDAO, aiProvider);
+        try {
+            IReviewRepository reviewDAO = new SqlReviewDAO();
+            IUserRepository userDAO = new SqlUserDAO();
+
+            // 1. KỸ THUẬT MOCKING: Giả lập AlertDAO tạm thời để code không báo đỏ chờ DB
+            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+
+            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
+            TriageService triageService = new TriageService(new WekaProvider(modelPath));
+
+            // 3. Khởi tạo ReviewService chính thức (Gán vào biến instance)
+            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ServletException("Lỗi khởi tạo ReviewServlet do Weka Model: " + e.getMessage());
+        }
     }
 
     @Override
@@ -37,6 +59,7 @@ public class ReviewServlet extends BaseServlet {
         }
     }
 
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -49,8 +72,9 @@ public class ReviewServlet extends BaseServlet {
 
             String productId = request.getParameter("productId");
             String content = request.getParameter("content");
-            if (content == null)
+            if (content == null) {
                 content = request.getParameter("txtContent");
+            }
 
             int rating = Integer.parseInt(request.getParameter("rating"));
 
@@ -58,9 +82,10 @@ public class ReviewServlet extends BaseServlet {
 
             Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
 
-            reviewService.submitReview(newReview);
+            // 4. SỬA CHỮ KÝ HÀM: Truyền thêm username để AI tính toán Account Age
+            reviewService.submitReview(newReview, currentUser.getUsername());
 
-            request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Đánh giá sẽ được ghi nhận.");
+            request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
             redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
 
         } catch (Exception e) {
