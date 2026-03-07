@@ -85,13 +85,69 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public Review findById(String reviewId) {
-        throw new UnsupportedOperationException(
-                "Chưa triển khai logic lấy chi tiết Review. Nhiệm vụ của Thành viên 1.");
+        String sql = "SELECT * FROM Reviews WHERE review_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, reviewId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     public List<Review> getReviewHistory(String reviewId) {
-        throw new UnsupportedOperationException("Chưa triển khai logic lấy lịch sử Audit. Nhiệm vụ của Thành viên 1.");
+        List<Review> list = new ArrayList<>();
+        // Sử dụng hàm JSON_VALUE của SQL Server để lấy dữ liệu từ AuditLog mà không cần
+        // thư viện ngoài
+        String sql = "SELECT " +
+                "  JSON_VALUE(diff_json, '$.reviewId') AS review_id, " +
+                "  JSON_VALUE(diff_json, '$.productId') AS product_id, " +
+                "  JSON_VALUE(diff_json, '$.userId') AS user_id, " +
+                "  JSON_VALUE(diff_json, '$.content') AS content, " +
+                "  CAST(JSON_VALUE(diff_json, '$.rating') AS INT) AS rating, " +
+                "  JSON_VALUE(diff_json, '$.status') AS status, " +
+                "  [timestamp] AS created_at " +
+                "FROM AuditLog " +
+                "WHERE JSON_VALUE(diff_json, '$.reviewId') = ? " +
+                "ORDER BY [timestamp] DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, reviewId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String rId = rs.getString("review_id");
+                    if (rId != null) {
+                        list.add(new Review(
+                                rId,
+                                rs.getString("product_id"),
+                                rs.getString("user_id"),
+                                rs.getString("content"),
+                                rs.getInt("rating"),
+                                ReviewStatus.valueOf(rs.getString("status")),
+                                rs.getTimestamp("created_at").toLocalDateTime()));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     @Override
@@ -114,6 +170,67 @@ public class SqlReviewDAO implements IReviewRepository {
                             ReviewStatus.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toLocalDateTime());
                     list.add(r);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public Object[] getReviewStatsByMerchant(String merchantId) {
+        String sql = "SELECT " +
+                "  AVG(CAST(r.rating AS FLOAT)) as avg_rating, " +
+                "  SUM(CASE WHEN r.status = 'PUBLISHED' THEN 1 ELSE 0 END) as published_count, " +
+                "  SUM(CASE WHEN r.status = 'FLAGGED' THEN 1 ELSE 0 END) as flagged_count " +
+                "FROM Reviews r " +
+                "JOIN Products p ON r.product_id = p.product_id " +
+                "WHERE p.merchant_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, merchantId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double avgRating = rs.getDouble("avg_rating");
+                    int publishedCount = rs.getInt("published_count");
+                    int flaggedCount = rs.getInt("flagged_count");
+                    // Format to 1 decimal place if needed, but double is fine
+                    return new Object[] { avgRating, publishedCount, flaggedCount };
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new Object[] { 0.0, 0, 0 };
+    }
+
+    @Override
+    public List<Review> getRecentReviewsByMerchant(String merchantId, int limit) {
+        List<Review> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) r.* FROM Reviews r " +
+                "JOIN Products p ON r.product_id = p.product_id " +
+                "WHERE p.merchant_id = ? " +
+                "ORDER BY r.created_at DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+            ps.setString(2, merchantId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime()));
                 }
             }
         } catch (Exception e) {

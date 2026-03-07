@@ -36,6 +36,23 @@ public class SqlProductDAO implements IProductRepository {
     }
 
     @Override
+    public int countByMerchantId(String merchantId) {
+        String sql = "SELECT COUNT(*) FROM Products WHERE merchant_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, merchantId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    @Override
     public Product findById(String productId) {
         String sql = "SELECT product_id, name, description, price, merchant_id FROM Products WHERE product_id = ?";
         try (Connection conn = DBConnection.getConnection();
