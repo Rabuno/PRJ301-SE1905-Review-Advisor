@@ -10,19 +10,19 @@ public class SqlUserDAO implements IUserRepository {
 
     @Override
     public User findByUsername(String username) {
+        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, r.role_name, p.permission_code " +
+                "FROM Users u " +
+                "INNER JOIN Roles r ON u.role_id = r.role_id " +
+                "LEFT JOIN RolePerm rp ON r.role_id = rp.role_id " +
+                "LEFT JOIN Permissions p ON rp.permission_id = p.permission_id " +
+                "WHERE u.username = ?";
 
-        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, r.role_name, p.permission_code "
-                + "FROM Users u "
-                + "INNER JOIN Roles r ON u.role_id = r.role_id "
-                + "LEFT JOIN RolePerm rp ON r.role_id = rp.role_id "
-                + "LEFT JOIN Permissions p ON rp.permission_id = p.permission_id "
-                + "WHERE u.username = ?";
-
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
 
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
 
                 User user = null;
                 List<String> permissions = new ArrayList<>();
@@ -63,10 +63,11 @@ public class SqlUserDAO implements IUserRepository {
 
     @Override
     public boolean registerUser(User user, String roleName) {
-        String sql = "INSERT INTO Users (user_id, username, password, role_id) "
-                + "VALUES (?, ?, ?, (SELECT role_id FROM Roles WHERE role_name = ?))";
+        String sql = "INSERT INTO Users (user_id, username, password, role_id) " +
+                "VALUES (?, ?, ?, (SELECT role_id FROM Roles WHERE role_name = ?))";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUserId());
             stmt.setString(2, user.getUsername());
@@ -85,9 +86,11 @@ public class SqlUserDAO implements IUserRepository {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, password, role_id FROM Users";
+String sql = "SELECT user_id, username, password, role_id FROM Users";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql);  ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 users.add(new User(
@@ -106,7 +109,8 @@ public class SqlUserDAO implements IUserRepository {
     public boolean updateUserRole(String userId, String roleId) {
         String sql = "UPDATE Users SET role_id = ? WHERE user_id = ?";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, roleId);
             stmt.setString(2, userId);
