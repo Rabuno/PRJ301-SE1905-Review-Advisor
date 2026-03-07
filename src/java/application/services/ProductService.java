@@ -14,4 +14,8 @@ public class ProductService {
     public List<Product> getAllProducts() {
         return productRepository.findAll(); // Có thể tích hợp thêm logic lọc, phân trang ở đây
     }
+
+    public Product getProductById(String productId) {
+        return productRepository.findById(productId);
+    }
 }

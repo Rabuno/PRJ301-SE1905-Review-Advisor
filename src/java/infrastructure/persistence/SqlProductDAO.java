@@ -14,22 +14,44 @@ public class SqlProductDAO implements IProductRepository {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, description, price, merchant_id FROM Products";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-             
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
                 Product p = new Product(
-                    rs.getString("product_id"),
-                    rs.getString("name"),
-                    rs.getString("description"),
-                    rs.getDouble("price"),
-                    rs.getString("merchant_id")
-                );
+                        rs.getString("product_id"),
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getDouble("price"),
+                        rs.getString("merchant_id"));
                 list.add(p);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return list;
+    }
+
+    @Override
+    public Product findById(String productId) {
+        String sql = "SELECT product_id, name, description, price, merchant_id FROM Products WHERE product_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Product(
+                            rs.getString("product_id"),
+                            rs.getString("name"),
+                            rs.getString("description"),
+                            rs.getDouble("price"),
+                            rs.getString("merchant_id"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

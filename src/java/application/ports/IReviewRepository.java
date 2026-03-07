@@ -6,8 +6,14 @@ import java.util.List;
 
 public interface IReviewRepository {
     void insert(Review review);
+
     void updateStatus(String reviewId, ReviewStatus newStatus);
+
     Review findById(String reviewId);
+
     List<Review> getReviewHistory(String reviewId);
+
     List<Review> findByStatus(ReviewStatus status);
+
+    List<Review> findByProductId(String productId);
 }

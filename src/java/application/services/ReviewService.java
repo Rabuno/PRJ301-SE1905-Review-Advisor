@@ -37,4 +37,8 @@ public class ReviewService {
     public void moderateReview(String reviewId, ReviewStatus status) {
         reviewDAO.updateStatus(reviewId, status);
     }
+
+    public List<Review> getReviewsByProduct(String productId) {
+        return reviewDAO.findByProductId(productId);
+    }
 }
