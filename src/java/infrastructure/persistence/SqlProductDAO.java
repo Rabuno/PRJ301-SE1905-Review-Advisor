@@ -23,7 +23,10 @@ public class SqlProductDAO implements IProductRepository {
                         rs.getString("name"),
                         rs.getString("description"),
                         rs.getDouble("price"),
-                        rs.getString("merchant_id"));
+                        rs.getString("merchant_id"),
+                        "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop"); // Default
+                                                                                                              // image
+                                                                                                              // for UI
                 list.add(p);
             }
         } catch (Exception e) {
@@ -46,7 +49,11 @@ public class SqlProductDAO implements IProductRepository {
                             rs.getString("name"),
                             rs.getString("description"),
                             rs.getDouble("price"),
-                            rs.getString("merchant_id"));
+                            rs.getString("merchant_id"),
+                            "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop"); // Default
+                                                                                                                  // image
+                                                                                                                  // for
+                                                                                                                  // UI
                 }
             }
         } catch (Exception e) {

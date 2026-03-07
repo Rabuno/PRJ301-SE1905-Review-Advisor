@@ -6,13 +6,16 @@ public class Product {
     private String description;
     private double price;
     private String merchantId;
+    private String imageUrl;
 
-    public Product(String productId, String name, String description, double price, String merchantId) {
+    public Product(String productId, String name, String description, double price, String merchantId,
+            String imageUrl) {
         this.productId = productId;
         this.name = name;
         this.description = description;
         this.price = price;
         this.merchantId = merchantId;
+        this.imageUrl = imageUrl;
     }
 
     public String getProductId() {
@@ -35,12 +38,7 @@ public class Product {
         return merchantId;
     }
 
-    // Stub methods for UI compatibility (future updates)
-    public String getCategory() {
-        return "";
-    }
-
     public String getImageUrl() {
-        return "";
+        return imageUrl;
     }
 }
