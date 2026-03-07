@@ -3,14 +3,13 @@ package domain.entities;
 import java.util.List;
 
 public class User {
+
     private String userId;
     private String username;
     private String password;
     private String roleId;
-<<<<<<< HEAD
-=======
+
     private String role;
->>>>>>> c4df0400614ac4ae40671795dbe5ab25b2f48250
     private List<String> permissions;
 
     public User(String userId, String username, String password) {
@@ -51,8 +50,6 @@ public class User {
         this.roleId = roleId;
     }
 
-<<<<<<< HEAD
-=======
     public String getRole() {
         return role;
     }
@@ -61,7 +58,6 @@ public class User {
         this.role = role;
     }
 
->>>>>>> c4df0400614ac4ae40671795dbe5ab25b2f48250
     public List<String> getPermissions() {
         return permissions;
     }

@@ -1,4 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,17 +8,27 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 </head>
-<body class="bg-light">
+<body class="bg-light d-flex flex-column min-vh-100">
+    
     <jsp:include page="/common/header.jsp" />
 
-    <div class="container mt-5 mb-5">
+    <div class="container mt-5 mb-5 flex-grow-1">
         <div class="row justify-content-center">
             <div class="col-md-5">
                 <div class="card shadow-lg border-0 rounded-3 p-4">
-                    <h2 class="text-center fw-bold text-primary mb-4">Welcome Back</h2>
+                    <h2 class="text-center fw-bold text-primary mb-4">Welcome</h2>
                     
-                    <c:if test="${not empty requestScope.ERROR}">
-                        <div class="alert alert-danger">${requestScope.ERROR}</div>
+                    
+                    <c:if test="${not empty requestScope.SUCCESS_MSG and requestScope.SUCCESS_MSG != ''}">
+                        <div class="alert alert-success shadow-sm text-center fw-bold" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>${requestScope.SUCCESS_MSG}
+                        </div>
+                    </c:if>
+                    
+                    <c:if test="${not empty requestScope.ERROR and requestScope.ERROR != ''}">
+                        <div class="alert alert-danger shadow-sm text-center fw-bold" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.ERROR}
+                        </div>
                     </c:if>
                     
                     <form action="${pageContext.request.contextPath}/LoginServlet" method="POST">

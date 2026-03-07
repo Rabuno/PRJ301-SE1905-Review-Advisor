@@ -34,16 +34,19 @@ public class RegisterServlet extends HttpServlet {
         String pass = request.getParameter("txtPassword");
         String roleType = request.getParameter("roleType");
 
+        // Nếu người dùng bật công tắc Merchant trên giao diện, value sẽ là "merchant"
         boolean isMerchant = "merchant".equalsIgnoreCase(roleType);
 
         try {
             boolean isRegistered = authService.processRegistration(user, pass, isMerchant);
 
             if (isRegistered) {
-                request.setAttribute("SUCCESS_MSG", "Đăng ký thành công! Vui lòng đăng nhập.");
+                // Đã đổi sang tiếng Anh
+                request.setAttribute("SUCCESS_MSG", "Registration successful! Please log in.");
                 request.getRequestDispatcher("/login.jsp").forward(request, response);
             } else {
-                throw new Exception("Lỗi hệ thống khi đăng ký. Vui lòng thử lại sau.");
+                // Đã đổi sang tiếng Anh
+                throw new Exception("System error during registration. Please try again later.");
             }
 
         } catch (Exception e) {

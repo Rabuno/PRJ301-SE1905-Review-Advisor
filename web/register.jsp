@@ -1,4 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,17 +14,19 @@
         .strength-strong { width: 100%; background-color: #198754; }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-light d-flex flex-column min-vh-100">
     <jsp:include page="/common/header.jsp" />
 
-    <div class="container mt-5 mb-5">
+    <div class="container mt-5 mb-5 flex-grow-1">
         <div class="row justify-content-center">
             <div class="col-md-5">
                 <div class="card shadow-lg border-0 rounded-3 p-4">
                     <h2 class="text-center fw-bold text-success mb-4">Create an Account</h2>
                     
-                    <c:if test="${not empty requestScope.ERROR}">
-                        <div class="alert alert-danger">${requestScope.ERROR}</div>
+                    <c:if test="${not empty requestScope.ERROR and requestScope.ERROR != ''}">
+                        <div class="alert alert-danger shadow-sm text-center fw-bold" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.ERROR}
+                        </div>
                     </c:if>
                     
                     <form action="${pageContext.request.contextPath}/RegisterServlet" method="POST" id="registerForm">
@@ -55,6 +58,16 @@
                             <small id="matchMessage" class="mt-1 d-block"></small>
                         </div>
 
+                        <div class="mb-4 p-3 bg-light border border-secondary-subtle rounded">
+                            <div class="form-check ms-1">
+                                <input class="form-check-input border-primary shadow-sm" type="checkbox" id="roleMerchant" name="roleType" value="merchant" style="transform: scale(1.3); cursor: pointer; margin-top: 0.3rem;">
+                                <label class="form-check-label fw-bold text-primary ms-2" for="roleMerchant" style="cursor: pointer;">
+                                    Register as a Merchant
+                                </label>
+                                <small class="d-block text-muted mt-1">Check this box if you want to manage properties and reply to customer reviews.</small>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-success w-100 py-2 fw-bold fs-5 mb-3" id="btnRegister" disabled>Register</button>
                     </form>
                 </div>
@@ -70,7 +83,6 @@
         const matchMessage = document.getElementById('matchMessage');
         const btnRegister = document.getElementById('btnRegister');
 
-        // Hàm Ẩn/Hiện mật khẩu
         function toggleVis(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);
@@ -83,14 +95,12 @@
             }
         }
 
-        // Logic kiểm tra sức mạnh mật khẩu & khớp mật khẩu
         function validateForm() {
             const val = pwdInput.value;
             const confirmVal = confirmInput.value;
             let strength = 0;
             let isValid = true;
 
-            // Đo sức mạnh
             if (val.length >= 6) strength += 1;
             if (val.match(/(?=.*[0-9])/)) strength += 1;
             if (val.match(/(?=.*[!@#\$%\^&\*])/)) strength += 1;
@@ -113,7 +123,6 @@
                 strengthText.className = 'text-success mt-1 d-block small';
             }
 
-            // Kiểm tra khớp mật khẩu
             if (confirmVal.length > 0) {
                 if (val === confirmVal) {
                     matchMessage.innerText = 'Passwords match!';

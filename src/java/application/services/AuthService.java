@@ -14,13 +14,13 @@ public class AuthService {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            throw new Exception("Tài khoản không tồn tại.");
+            throw new Exception("Account does not exist.");
         }
 
         String hashedPassword = infrastructure.security.HashUtil.generateSHA256(rawPassword);
 
         if (!user.getPassword().equals(hashedPassword)) {
-            throw new Exception("Sai mật khẩu.");
+            throw new Exception("Incorrect password.");
         }
 
         return user;
@@ -28,7 +28,7 @@ public class AuthService {
 
     public boolean processRegistration(String username, String password, boolean isMerchant) throws Exception {
         if (userRepository.findByUsername(username) != null) {
-            throw new Exception("Tên đăng nhập đã tồn tại.");
+            throw new Exception("Username already exists.");
         }
 
         String userId = java.util.UUID.randomUUID().toString();
