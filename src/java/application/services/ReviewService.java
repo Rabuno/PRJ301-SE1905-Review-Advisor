@@ -1,40 +1,76 @@
 package application.services;
 
+import application.ports.IReviewRepository;
+import application.ports.IUserRepository;
+import application.ports.IAlertRepository;
 import domain.entities.Review;
-import domain.enums.ReviewStatus;
-import infrastructure.persistence.SqlReviewDAO;
-import infrastructure.ai.WekaProvider;
-import java.util.List;
+import domain.entities.User;
+import domain.entities.Alert;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 
 public class ReviewService {
+    private final IReviewRepository reviewRepository;
+    private final IUserRepository userRepository;
+    private final IAlertRepository alertRepository;
+    private final TriageService triageService;
 
-    private final SqlReviewDAO reviewDAO;
-    private final WekaProvider aiProvider;
-
-    public ReviewService(SqlReviewDAO reviewDAO, WekaProvider aiProvider) {
-        this.reviewDAO = reviewDAO;
-        this.aiProvider = aiProvider;
+    // Cập nhật Constructor để tiêm (Inject) đủ các Repository cần thiết
+    public ReviewService(IReviewRepository reviewRepository, 
+                         IUserRepository userRepository,
+                         IAlertRepository alertRepository,
+                         TriageService triageService) {
+        this.reviewRepository = reviewRepository;
+        this.userRepository = userRepository;
+        this.alertRepository = alertRepository;
+        this.triageService = triageService;
     }
 
-    public void submitReview(Review review) {
-        double riskScore = aiProvider.calculateRiskScore(review);
-        System.out.println(
-                "[AI Module] ReviewID: " + review.getReviewId() + " | Khả năng SPAM: " + (riskScore * 100) + "%");
+    public boolean submitReview(Review review, String username) {
+        // 1. Thu thập Siêu dữ liệu (Metadata) cho Mô hình Đa biến
+        double accountAgeDays = calculateAccountAge(username);
+        // Giả sử đếm số review trong 1 giờ qua để tính Burst Rate
+        double burstRate = (double) reviewRepository.countRecentReviewsByUser(review.getUserId(), 1);
 
-        if (riskScore >= 0.7) {
-            review.setStatus(ReviewStatus.FLAGGED);
-        } else {
-            review.setStatus(ReviewStatus.PUBLISHED);
+        // 2. Chuyển giao cho Trí tuệ Nhân tạo sàng lọc (AI Triage)
+        Alert alert = triageService.evaluateReview(review, accountAgeDays, burstRate);
+
+        // 3. Lưu trữ Đánh giá (Trạng thái đã được TriageService quyết định)
+        boolean isReviewSaved = reviewRepository.save(review);
+
+        // 4. Lưu trữ Gói Cảnh báo (Nếu có)
+        if (isReviewSaved && alert != null) {
+            alertRepository.saveAlert(alert);
         }
 
-        reviewDAO.insert(review);
+        return isReviewSaved;
     }
 
-    public List<Review> getFlaggedReviews() {
-        return reviewDAO.findByStatus(ReviewStatus.FLAGGED);
+    // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ---
+    private double calculateAccountAge(String username) {
+        User user = userRepository.findByUsername(username);
+        if (user != null && user.getCreatedAt() != null) {
+            // Tính số ngày từ lúc tạo đến hiện tại
+            long days = ChronoUnit.DAYS.between(
+                user.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), 
+                LocalDate.now()
+            );
+            return (double) days;
+        }
+        return 0.0; // Mặc định là tài khoản mới tạo (0 ngày) nếu lỗi
+    }
+    
+    // --- CÁC HÀM DÀNH CHO LUỒNG MODERATOR (KIỂM DUYỆT) ---
+    
+    // Lấy danh sách bài bị AI cắm cờ
+    public java.util.List<Review> getFlaggedReviews() {
+        return reviewRepository.findByStatus(domain.enums.ReviewStatus.FLAGGED);
     }
 
-    public void moderateReview(String reviewId, ReviewStatus status) {
-        reviewDAO.updateStatus(reviewId, status);
+    // Xử lý quyết định của con người (Approve/Reject)
+    public void moderateReview(String reviewId, domain.enums.ReviewStatus newStatus) {
+        // Có thể bổ sung logic lưu AuditLog tại đây trong tương lai
+        reviewRepository.updateStatus(reviewId, newStatus);
     }
 }

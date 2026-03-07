@@ -1,84 +1,91 @@
 package infrastructure.ai;
 
-import application.ports.IAIService;
-import domain.entities.Review;
-import weka.classifiers.Classifier;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
-
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class WekaProvider implements IAIService {
+public class WekaProvider {
+    private FilteredClassifier classifier;
+    private Instances dataStructure;
 
-    private static final Logger LOGGER = Logger.getLogger(WekaProvider.class.getName());
-    
-    private static Classifier spamClassifier;
-    private static Instances dataStructure;
-
-    // Sử dụng đường dẫn tương đối nội bộ tính từ thư mục src/java/
-    private static final String INTERNAL_MODEL_PATH = "infrastructure/ai/training/model/spam_review_classifier.model"; 
-
-    public WekaProvider() {
-        if (spamClassifier == null) {
-            loadModelAndStructure();
-        }
+    public WekaProvider(String modelPath) throws Exception {
+        this.classifier = (FilteredClassifier) SerializationHelper.read(modelPath);
+        setupMultivariateStructure();
     }
 
-    private synchronized void loadModelAndStructure() {
-        if (spamClassifier != null) return; 
-        try {
-            // 1. Nạp mô hình thông qua ClassLoader dưới dạng luồng InputStream
-            InputStream modelStream = WekaProvider.class.getClassLoader().getResourceAsStream(INTERNAL_MODEL_PATH);
-            if (modelStream == null) {
-                throw new Exception("Không tìm thấy tệp mô hình tại: " + INTERNAL_MODEL_PATH);
-            }
-            spamClassifier = (Classifier) SerializationHelper.read(modelStream);
-            
-            // 2. Thiết lập không gian vector (Vector Space)
-            ArrayList<Attribute> attributes = new ArrayList<>();
-            attributes.add(new Attribute("review_text", (ArrayList<String>) null)); 
-            
-            ArrayList<String> classLabels = new ArrayList<>();
-            classLabels.add("VALID");
-            classLabels.add("SPAM");
-            attributes.add(new Attribute("class", classLabels));
+    private void setupMultivariateStructure() {
+        ArrayList<Attribute> attributes = new ArrayList<>();
+        attributes.add(new Attribute("review_text", (ArrayList<String>) null)); 
+        attributes.add(new Attribute("rating"));                                
+        attributes.add(new Attribute("account_age"));                           
+        
+        ArrayList<String> classValues = new ArrayList<>();
+        classValues.add("ham");  
+        classValues.add("spam"); 
+        attributes.add(new Attribute("class_label", classValues));              
 
-            dataStructure = new Instances("ReviewData", attributes, 1);
-            dataStructure.setClassIndex(1); 
-
-            LOGGER.info("[AI System] Tải mô hình Weka nội bộ thành công.");
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "[AI System] Lỗi nạp mô hình: ", e);
-        }
+        this.dataStructure = new Instances("ReviewInference", attributes, 0);
+        this.dataStructure.setClassIndex(this.dataStructure.numAttributes() - 1);
     }
 
-    @Override
-    public double calculateRiskScore(Review review) {
-        if (spamClassifier == null || dataStructure == null) {
-            return 0.0;
-        }
+    public double calculateRiskScore(String text, double rating, double accountAgeDays) throws Exception {
+        DenseInstance instance = new DenseInstance(4);
+        instance.setDataset(dataStructure);
+        
+        instance.setValue(0, text);
+        instance.setValue(1, rating);
+        instance.setValue(2, accountAgeDays);
+        
+        // KIỂM TRA LUỒNG DỮ LIỆU (PIPELINE UNIT TEST): In cấu trúc trước khi qua Filter
+        System.out.println("System Log - [Weka Input Instance]: " + instance.toString());
 
-        try {
-            DenseInstance newInstance = new DenseInstance(2);
-            newInstance.setDataset(dataStructure);
-            
-            String textContent = review.getContent();
-            if (textContent == null || textContent.trim().isEmpty()) {
-                return 0.0; 
+        double[] distribution = classifier.distributionForInstance(instance);
+        return distribution[1]; 
+    }
+
+    // CƠ CHẾ XAI (EXPLAINABLE AI): Trích xuất Top-K bằng Giải thuật Cắt bỏ (Ablation)
+    public java.util.List<java.util.Map.Entry<String, Double>> extractTopKRiskFeatures(
+            String text, double rating, double accountAgeDays, double baseRiskScore, int k) {
+        
+        java.util.Map<String, Double> featureImpact = new java.util.HashMap<>();
+        
+        // 1. Tiền xử lý và tách từ (Tokenization)
+        String[] words = text.toLowerCase().replaceAll("[^a-zA-Z0-9à-ỹÀ-Ỹ\\s]", "").split("\\s+");
+        java.util.Set<String> uniqueWords = new java.util.HashSet<>(java.util.Arrays.asList(words));
+
+        // 2. Chạy nội suy cắt bỏ (Leave-One-Out Inference)
+        for (String word : uniqueWords) {
+            if (word.length() < 3) continue; // Bỏ qua từ dừng (Stop-words) quá ngắn
+
+            try {
+                // Che lấp từ đang xét (Masking)
+                String maskedText = text.replaceAll("(?i)\\b" + word + "\\b", "");
+                
+                // Dự đoán lại không có từ này
+                double newRiskScore = calculateRiskScore(maskedText, rating, accountAgeDays);
+                
+                // Toán học: Từ này đóng góp bao nhiêu % vào rủi ro? (Nếu gỡ nó ra mà rủi ro giảm, tức là nó có hại)
+                double impact = baseRiskScore - newRiskScore;
+
+                if (impact > 0.01) { // Chỉ ghi nhận các từ có trọng số ảnh hưởng > 1%
+                    featureImpact.put(word, impact);
+                }
+            } catch (Exception e) {
+                // Bỏ qua lỗi cục bộ để tiếp tục tính toán các từ khác
             }
-            newInstance.setValue(dataStructure.attribute("review_text"), textContent);
-
-            double[] probabilities = spamClassifier.distributionForInstance(newInstance);
-            return probabilities[1]; // Trả về tỷ lệ SPAM
-
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "[AI System] Lỗi suy luận: ", e);
-            return 0.0; 
         }
+
+        // 3. Sắp xếp giảm dần theo trọng số và lấy Top K
+        return featureImpact.entrySet().stream()
+                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+                .limit(k)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

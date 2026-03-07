@@ -4,6 +4,7 @@ import domain.enums.ReviewStatus;
 import java.time.LocalDateTime;
 
 public class Review {
+
     private String reviewId;
     private String productId;
     private String userId;
@@ -19,8 +20,7 @@ public class Review {
         this.userId = userId;
         this.content = content;
         this.rating = rating;
-        // Logic nghiệp vụ lõi: Mọi review mới đều phải ở trạng thái PENDING
-        this.status = ReviewStatus.PENDING; 
+        this.status = ReviewStatus.PENDING;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -36,12 +36,35 @@ public class Review {
     }
 
     // Getters & Setters
-    public String getReviewId() { return reviewId; }
-    public String getContent() { return content; }
-    public int getRating() { return rating; }
-    public ReviewStatus getStatus() { return status; }
-    public void setStatus(ReviewStatus status) { this.status = status; }
-    public String getProductId() { return productId; }
-    public String getUserId() { return userId; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getReviewId() {
+        return reviewId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public ReviewStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ReviewStatus status) {
+        this.status = status;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }
