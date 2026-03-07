@@ -15,9 +15,32 @@ public class Product {
         this.merchantId = merchantId;
     }
 
-    public String getProductId() { return productId; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public double getPrice() { return price; }
-    public String getMerchantId() { return merchantId; }
+    public String getProductId() {
+        return productId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public String getMerchantId() {
+        return merchantId;
+    }
+
+    // Stub methods for UI compatibility (future updates)
+    public String getCategory() {
+        return "";
+    }
+
+    public String getImageUrl() {
+        return "";
+    }
 }
