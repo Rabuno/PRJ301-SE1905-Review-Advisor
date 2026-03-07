@@ -86,7 +86,7 @@ public class SqlUserDAO implements IUserRepository {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, password, role_id FROM Users";
+String sql = "SELECT user_id, username, password, role_id FROM Users";
 
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql);

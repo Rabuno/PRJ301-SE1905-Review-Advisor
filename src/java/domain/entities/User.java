@@ -3,6 +3,7 @@ package domain.entities;
 import java.util.List;
 
 public class User {
+
     private String userId;
     private String username;
     private String password;
