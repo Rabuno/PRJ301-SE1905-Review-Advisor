@@ -7,4 +7,6 @@ public interface IProductRepository {
     List<Product> findAll();
 
     Product findById(String productId);
+
+    int countByMerchantId(String merchantId);
 }

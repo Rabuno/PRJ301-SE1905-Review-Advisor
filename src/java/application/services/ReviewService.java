@@ -41,4 +41,12 @@ public class ReviewService {
     public List<Review> getReviewsByProduct(String productId) {
         return reviewDAO.findByProductId(productId);
     }
+
+    public Object[] getMerchantReviewStats(String merchantId) {
+        return reviewDAO.getReviewStatsByMerchant(merchantId);
+    }
+
+    public List<Review> getRecentMerchantReviews(String merchantId, int limit) {
+        return reviewDAO.getRecentReviewsByMerchant(merchantId, limit);
+    }
 }
