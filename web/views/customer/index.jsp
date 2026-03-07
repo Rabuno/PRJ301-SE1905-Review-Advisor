@@ -76,7 +76,7 @@
                                                 <p class="text-muted small mb-3">
                                                     <i class="bi bi-card-text text-danger"></i> Description: <span
                                                         title="${product.description}"><strong>${product.description.length()
-                                                            > 50 ? product.description.substring(0, 50).concat('...') :
+                                                            > 50 ? product.description.substring(0, 50) += '...' :
                                                             product.description}</strong></span>
                                                 </p>
 
