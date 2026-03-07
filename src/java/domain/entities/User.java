@@ -70,8 +70,6 @@ public class User {
     public boolean hasPermission(String permission) {
         return permissions != null && permissions.contains(permission);
     }
-<<<<<<< HEAD
-=======
 
     public Date getCreatedAt() {
         return createdAt;
@@ -80,5 +78,4 @@ public class User {
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
->>>>>>> main
 }

@@ -192,3 +192,4 @@ INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value
 INSERT INTO AuditLog (audit_id, actor_user_id, action, diff_json, previous_hash, current_hash) VALUES 
 ('GENESIS_001', 'SYSTEM', 'SYSTEM_INIT', '{}', '0000000000000000000000000000000000000000000000000000000000000000', '1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f');
 GO
+

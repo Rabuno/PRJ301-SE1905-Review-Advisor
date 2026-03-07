@@ -1,13 +1,19 @@
 package adapters.controllers;
 
 import application.dto.MerchantStatsDTO;
+import application.ports.IAlertRepository;
+import application.ports.IReviewRepository;
+import application.ports.IUserRepository;
 import application.services.ProductService;
 import application.services.ReviewService;
+import application.services.TriageService;
 import domain.entities.Review;
 import domain.entities.User;
 import infrastructure.ai.WekaProvider;
+import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlProductDAO;
 import infrastructure.persistence.SqlReviewDAO;
+import infrastructure.persistence.SqlUserDAO;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,8 +31,24 @@ public class MerchantServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        this.productService = new ProductService(new SqlProductDAO());
-        this.reviewService = new ReviewService(new SqlReviewDAO(), new WekaProvider());
+        try {
+            IReviewRepository reviewDAO = new SqlReviewDAO();
+            IUserRepository userDAO = new SqlUserDAO();
+
+            // 1. KỸ THUẬT MOCKING: Giả lập AlertDAO tạm thời để code không báo đỏ chờ DB
+            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+
+            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
+            TriageService triageService = new TriageService(new WekaProvider(modelPath));
+
+            // 3. Khởi tạo ReviewService chính thức (Gán vào biến instance)
+            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ServletException("Lỗi khởi tạo ReviewServlet do Weka Model: " + e.getMessage());
+        }
     }
 
     @Override

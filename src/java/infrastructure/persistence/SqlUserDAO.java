@@ -10,14 +10,6 @@ public class SqlUserDAO implements IUserRepository {
 
     @Override
     public User findByUsername(String username) {
-<<<<<<< HEAD
-        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, r.role_name, p.permission_code " +
-                "FROM Users u " +
-                "INNER JOIN Roles r ON u.role_id = r.role_id " +
-                "LEFT JOIN RolePerm rp ON r.role_id = rp.role_id " +
-                "LEFT JOIN Permissions p ON rp.permission_id = p.permission_id " +
-                "WHERE u.username = ?";
-=======
 
         String sql = "SELECT u.user_id, u.username, u.password, u.role_id, u.created_at, r.role_name, p.permission_code "
                 + "FROM Users u "
@@ -25,7 +17,6 @@ public class SqlUserDAO implements IUserRepository {
                 + "LEFT JOIN RolePerm rp ON r.role_id = rp.role_id "
                 + "LEFT JOIN Permissions p ON rp.permission_id = p.permission_id "
                 + "WHERE u.username = ?";
->>>>>>> main
 
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
