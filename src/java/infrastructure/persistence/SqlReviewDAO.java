@@ -92,6 +92,92 @@ public class SqlReviewDAO implements IReviewRepository {
     }
 
     @Override
+    public List<Review> findByProductId(String productId) {
+        List<Review> list = new ArrayList<>();
+        // Chỉ lấy các review đã được PUBLISHED cho user xem
+        String sql = "SELECT * FROM Reviews WHERE product_id = ? AND status = 'PUBLISHED' ORDER BY created_at DESC";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, productId);
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Review r = new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime());
+                    list.add(r);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public Object[] getReviewStatsByMerchant(String merchantId) {
+        String sql = "SELECT "
+                + "  AVG(CAST(r.rating AS FLOAT)) as avg_rating, "
+                + "  SUM(CASE WHEN r.status = 'PUBLISHED' THEN 1 ELSE 0 END) as published_count, "
+                + "  SUM(CASE WHEN r.status = 'FLAGGED' THEN 1 ELSE 0 END) as flagged_count "
+                + "FROM Reviews r "
+                + "JOIN Products p ON r.product_id = p.product_id "
+                + "WHERE p.merchant_id = ?";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, merchantId);
+            try ( ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double avgRating = rs.getDouble("avg_rating");
+                    int publishedCount = rs.getInt("published_count");
+                    int flaggedCount = rs.getInt("flagged_count");
+                    // Format to 1 decimal place if needed, but double is fine
+                    return new Object[]{avgRating, publishedCount, flaggedCount};
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new Object[]{0.0, 0, 0};
+    }
+
+    @Override
+    public List<Review> getRecentReviewsByMerchant(String merchantId, int limit) {
+        List<Review> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) r.* FROM Reviews r "
+                + "JOIN Products p ON r.product_id = p.product_id "
+                + "WHERE p.merchant_id = ? "
+                + "ORDER BY r.created_at DESC";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+            ps.setString(2, merchantId);
+
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime()));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
     public int countRecentReviewsByUser(String userId, int hours) {
         int count = 0;
         // Logic truy vấn SQL Server: Đếm số lượng review trong X giờ qua

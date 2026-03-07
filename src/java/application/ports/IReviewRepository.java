@@ -16,5 +16,11 @@ public interface IReviewRepository {
 
     List<Review> findByStatus(ReviewStatus status);
 
+    List<Review> findByProductId(String productId);
+
+    Object[] getReviewStatsByMerchant(String merchantId);
+
+    List<Review> getRecentReviewsByMerchant(String merchantId, int limit);
+
     int countRecentReviewsByUser(String userId, int hours);
 }
