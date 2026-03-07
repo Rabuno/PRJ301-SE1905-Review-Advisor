@@ -1,13 +1,14 @@
 package adapters.controllers;
 
+import application.dto.MerchantStatsDTO;
 import application.ports.IAlertRepository;
 import application.ports.IReviewRepository;
 import application.ports.IUserRepository;
 import application.services.ProductService;
 import application.services.ReviewService;
 import application.services.TriageService;
-import domain.entities.Product;
 import domain.entities.Review;
+import domain.entities.User;
 import infrastructure.ai.WekaProvider;
 import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlProductDAO;
@@ -22,8 +23,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet(name = "MainController", urlPatterns = { "/MainController" })
-public class MainController extends HttpServlet {
+@WebServlet(name = "MerchantServlet", urlPatterns = { "/MerchantServlet" })
+public class MerchantServlet extends HttpServlet {
 
     private ProductService productService;
     private ReviewService reviewService;
@@ -53,32 +54,39 @@ public class MainController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String action = request.getParameter("action");
+
+        User user = (User) request.getSession().getAttribute("USER");
+
+        if (user == null || !"MERCHANT".equals(user.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
+            return;
+        }
 
         try {
-            if ("ViewDetail".equals(action)) {
-                String productId = request.getParameter("id");
+            String merchantId = user.getUserId();
 
-                Product product = productService.getProductById(productId);
-                List<Review> reviews = reviewService.getReviewsByProduct(productId);
+            // Lấy tổng số sản phẩm của Merchant
+            int totalProperties = productService.countPropertiesByMerchant(merchantId);
 
-                if (product != null) {
-                    request.setAttribute("PRODUCT", product);
-                    request.setAttribute("REVIEWS", reviews);
-                    request.getRequestDispatcher("/views/customer/product-detail.jsp").forward(request, response);
-                } else {
-                    request.setAttribute("ERROR", "Product not found!");
-                    request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
-                }
-            } else {
-                // Default action: Lấy dữ liệu danh sách sản phẩm
-                List<Product> products = productService.getAllProducts();
-                request.setAttribute("PRODUCT_LIST", products);
-                request.getRequestDispatcher("/views/customer/index.jsp").forward(request, response);
-            }
+            // Lấy các chỉ số thống kê ([0]: avgRating, [1]: publishedCount, [2]:
+            // flaggedCount)
+            Object[] statsArray = reviewService.getMerchantReviewStats(merchantId);
+            double avgRating = (double) statsArray[0];
+            int publishedCount = (int) statsArray[1];
+            int flaggedCount = (int) statsArray[2];
+
+            MerchantStatsDTO statsDTO = new MerchantStatsDTO(totalProperties, avgRating, publishedCount, flaggedCount);
+
+            // Lấy 5 đánh giá mới nhất
+            List<Review> recentReviews = reviewService.getRecentMerchantReviews(merchantId, 5);
+
+            request.setAttribute("STATS", statsDTO);
+            request.setAttribute("RECENT_FEEDBACK", recentReviews);
+
+            request.getRequestDispatcher("/views/merchant/merchant-dashboard.jsp").forward(request, response);
 
         } catch (Exception e) {
-            request.setAttribute("ERROR", "Lỗi tải trang: " + e.getMessage());
+            request.setAttribute("ERROR", "Lỗi tải dữ liệu Dashboard: " + e.getMessage());
             request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
         }
     }

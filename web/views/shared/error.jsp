@@ -1,14 +1,32 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@include file="../../common/header.jsp" %>
-<div class="container text-center" style="margin-top: 100px;">
+
+<div class="container text-center mb-5" style="margin-top: 100px;">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <h1 class="display-1 fw-bold text-danger">Oops!</h1>
-            <h3 class="mb-4">?ã có l?i x?y ra</h3>
-            <div class="alert alert-light border shadow-sm">
-                <p class="mb-0 text-muted">${requestScope.ERROR_MESSAGE != null ? requestScope.ERROR_MESSAGE : "Yêu c?u c?a b?n không th? th?c hi?n ???c vào lúc này."}</p>
+            <h3 class="mb-4">Something went wrong</h3>
+            
+            <div class="alert alert-light border shadow-sm p-4">
+                <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3 d-block"></i>
+                <p class="mb-0 text-muted">
+                    <c:choose>
+                        <c:when test="${not empty requestScope.ERROR_MESSAGE}">
+                            ${requestScope.ERROR_MESSAGE}
+                        </c:when>
+                        <c:otherwise>
+                            Your request could not be processed at this time. Please try again later.
+                        </c:otherwise>
+                    </c:choose>
+                </p>
             </div>
-            <a href="MainController" class="btn btn-primary px-4 mt-3">Quay v? trang ch?</a>
+            
+            <a href="${pageContext.request.contextPath}/MainController" class="btn btn-primary px-4 mt-3 fw-bold shadow-sm">
+                &larr; Return to Home
+            </a>
         </div>
     </div>
 </div>
+
 <%@include file="../../common/footer.jsp" %>

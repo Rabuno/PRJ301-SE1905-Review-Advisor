@@ -62,7 +62,7 @@
                     <c:choose>
                         <c:when test="${empty sessionScope.USER}">
                             <a class="nav-link btn btn-outline-primary px-4 mx-2" href="${pageContext.request.contextPath}/login.jsp">Login</a>
-                            <a class="nav-link btn btn-primary text-white px-4 mx-2" href="${pageContext.request.contextPath}/register.jsp">Register</a>
+                            <a class="nav-link btn btn-outline-primary px-4 mx-2" href="${pageContext.request.contextPath}/register.jsp">Register</a>
                         </c:when>
                         <c:otherwise>
                             <span class="nav-link me-3">Welcome, <strong>${sessionScope.USER.username}</strong></span>

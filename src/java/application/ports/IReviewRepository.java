@@ -18,6 +18,7 @@ public interface IReviewRepository {
 
     List<Review> findByProductId(String productId);
 
+    // Merchant Dashboard methods
     Object[] getReviewStatsByMerchant(String merchantId);
 
     List<Review> getRecentReviewsByMerchant(String merchantId, int limit);
