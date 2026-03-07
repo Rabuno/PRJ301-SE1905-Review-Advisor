@@ -85,13 +85,69 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public Review findById(String reviewId) {
-        throw new UnsupportedOperationException(
-                "Chưa triển khai logic lấy chi tiết Review. Nhiệm vụ của Thành viên 1.");
+        String sql = "SELECT * FROM Reviews WHERE review_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, reviewId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     public List<Review> getReviewHistory(String reviewId) {
-        throw new UnsupportedOperationException("Chưa triển khai logic lấy lịch sử Audit. Nhiệm vụ của Thành viên 1.");
+        List<Review> list = new ArrayList<>();
+        // Sử dụng hàm JSON_VALUE của SQL Server để lấy dữ liệu từ AuditLog mà không cần
+        // thư viện ngoài
+        String sql = "SELECT " +
+                "  JSON_VALUE(diff_json, '$.reviewId') AS review_id, " +
+                "  JSON_VALUE(diff_json, '$.productId') AS product_id, " +
+                "  JSON_VALUE(diff_json, '$.userId') AS user_id, " +
+                "  JSON_VALUE(diff_json, '$.content') AS content, " +
+                "  CAST(JSON_VALUE(diff_json, '$.rating') AS INT) AS rating, " +
+                "  JSON_VALUE(diff_json, '$.status') AS status, " +
+                "  [timestamp] AS created_at " +
+                "FROM AuditLog " +
+                "WHERE JSON_VALUE(diff_json, '$.reviewId') = ? " +
+                "ORDER BY [timestamp] DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, reviewId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String rId = rs.getString("review_id");
+                    if (rId != null) {
+                        list.add(new Review(
+                                rId,
+                                rs.getString("product_id"),
+                                rs.getString("user_id"),
+                                rs.getString("content"),
+                                rs.getInt("rating"),
+                                ReviewStatus.valueOf(rs.getString("status")),
+                                rs.getTimestamp("created_at").toLocalDateTime()));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     @Override
