@@ -91,6 +91,14 @@ public class ReviewService {
         return reviewRepository.findByProductId(productId);
     }
 
+    public List<Review> getReviewsByUser(String userId) {
+        return reviewRepository.findByUserId(userId);
+    }
+
+    public Review getReviewById(String reviewId) {
+        return reviewRepository.findById(reviewId);
+    }
+
     public Object[] getMerchantReviewStats(String merchantId) {
         return reviewRepository.getReviewStatsByMerchant(merchantId);
     }

@@ -20,6 +20,8 @@ public interface IReviewRepository {
 
     List<Review> findByProductId(String productId);
 
+    List<Review> findByUserId(String userId);
+
     // Merchant Dashboard methods
     Object[] getReviewStatsByMerchant(String merchantId);
 

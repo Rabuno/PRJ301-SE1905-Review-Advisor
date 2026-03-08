@@ -42,6 +42,7 @@ public class TriageService {
                 return null;
             }
         } catch (Exception e) {
+            System.err.println("Weka Exception In TriageService: " + e.getMessage());
             e.printStackTrace();
             review.setStatus(ReviewStatus.PENDING);
             return null;

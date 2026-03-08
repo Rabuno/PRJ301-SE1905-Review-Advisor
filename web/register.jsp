@@ -98,19 +98,6 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-4 p-3 bg-light border border-secondary-subtle rounded">
-                                    <div class="form-check ms-1">
-                                        <input class="form-check-input border-primary shadow-sm" type="checkbox"
-                                            id="roleMerchant" name="roleType" value="merchant"
-                                            style="transform: scale(1.3); cursor: pointer; margin-top: 0.3rem;">
-                                        <label class="form-check-label fw-bold text-primary ms-2" for="roleMerchant"
-                                            style="cursor: pointer;">
-                                            Register as a Merchant
-                                        </label>
-                                        <small class="d-block text-muted mt-1">Check this box if you want to manage
-                                            properties and reply to customer reviews.</small>
-                                    </div>
-                                </div>
 
                                 <button type="submit" class="btn btn-success w-100 py-2 fw-bold fs-5 mb-3"
                                     id="btnRegister" disabled>Register</button>

@@ -59,7 +59,7 @@
                                     <a href="${pageContext.request.contextPath}/views/customer/write-review.jsp?id=${requestScope.PRODUCT.productId}"
                                         class="btn btn-outline-success fw-bold btn-sm px-3">
                                         <i class="bi bi-plus-lg"></i> Add Review
-                                    </a>3
+                                    </a>
                                 </div>
 
                                 <div class="review-list">

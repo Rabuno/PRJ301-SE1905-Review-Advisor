@@ -12,6 +12,7 @@ import domain.entities.User;
 import infrastructure.ai.WekaProvider;
 import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlProductDAO;
+import application.ports.IProductRepository;
 import infrastructure.persistence.SqlReviewDAO;
 import infrastructure.persistence.SqlUserDAO;
 
@@ -37,6 +38,10 @@ public class MerchantServlet extends HttpServlet {
 
             // 1. KỸ THUẬT MOCKING: Giả lập AlertDAO tạm thời để code không báo đỏ chờ DB
             IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+
+            // Khởi tạo Product DAO và Service
+            IProductRepository productDAO = new SqlProductDAO();
+            this.productService = new ProductService(productDAO);
 
             // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");

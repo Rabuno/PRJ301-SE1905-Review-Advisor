@@ -60,22 +60,35 @@ public class ReviewServlet extends BaseServlet {
         String action = request.getParameter("action");
         if ("write".equals(action)) {
             forwardToView(request, response, "/views/customer/write-review.jsp");
+        } else if ("edit".equals(action)) {
+            String reviewId = request.getParameter("reviewId");
+            Review existingReview = reviewService.getReviewById(reviewId);
+            if (existingReview != null) {
+                request.setAttribute("REVIEW", existingReview);
+                forwardToView(request, response, "/views/customer/write-review.jsp");
+            } else {
+                request.setAttribute("ERROR", "Review not found!");
+                redirect(request, response, "/MainController?action=MyReviews");
+            }
         } else if ("delete".equals(action)) {
             try {
                 String reviewId = request.getParameter("reviewId");
                 String productId = request.getParameter("productId");
+                String source = request.getParameter("source"); // To know where we came from
 
                 reviewService.deleteReview(reviewId);
                 request.getSession().setAttribute("SUCCESS_MSG", "Đã xóa đánh giá thành công!");
 
-                if (productId != null && !productId.isEmpty()) {
+                if ("myreviews".equals(source)) {
+                    redirect(request, response, "/MainController?action=MyReviews");
+                } else if (productId != null && !productId.isEmpty()) {
                     redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
                 } else {
                     redirect(request, response, "/MainController");
                 }
             } catch (Exception e) {
                 request.getSession().setAttribute("ERROR", "Lỗi khi xóa đánh giá: " + e.getMessage());
-                redirect(request, response, "/MainController");
+                redirect(request, response, "/MainController?action=MyReviews");
             }
         } else {
             forwardToView(request, response, "/views/customer/product-detail.jsp");
@@ -101,16 +114,24 @@ public class ReviewServlet extends BaseServlet {
 
             int rating = Integer.parseInt(request.getParameter("rating"));
 
-            String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            String action = request.getParameter("action");
+            if ("update".equals(action)) {
+                String existingReviewId = request.getParameter("reviewId");
+                Review updatedReview = new Review(existingReviewId, productId, currentUser.getUserId(), content,
+                        rating);
+                reviewService.submitReview(updatedReview, currentUser.getUsername()); // Re-runs AI triage
 
-            Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
+                request.getSession().setAttribute("SUCCESS_MSG", "Đánh giá của bạn đã được cập nhật thành công!");
+                redirect(request, response, "/MainController?action=MyReviews");
+            } else {
+                String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
+                reviewService.submitReview(newReview, currentUser.getUsername());
 
-            // 4. SỬA CHỮ KÝ HÀM: Truyền thêm username để AI tính toán Account Age
-            reviewService.submitReview(newReview, currentUser.getUsername());
-
-            request.getSession().setAttribute("SUCCESS_MSG",
-                    "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
-            redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
+                request.getSession().setAttribute("SUCCESS_MSG",
+                        "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
+                redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
+            }
 
         } catch (Exception e) {
             request.setAttribute("ERROR", "Lỗi gửi đánh giá: " + e.getMessage());

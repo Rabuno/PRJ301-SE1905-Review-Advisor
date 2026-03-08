@@ -14,6 +14,37 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public boolean save(Review review) {
+        // Kiểm tra xem review đã tồn tại chưa (Edit mode)
+        boolean isUpdate = false;
+        String checkSql = "SELECT 1 FROM Reviews WHERE review_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+            checkPs.setString(1, review.getReviewId());
+            try (ResultSet rs = checkPs.executeQuery()) {
+                if (rs.next()) {
+                    isUpdate = true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (isUpdate) {
+            String updateSql = "UPDATE Reviews SET rating = ?, content = ?, status = ?, updated_at = GETDATE() WHERE review_id = ?";
+            try (Connection conn = DBConnection.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setInt(1, review.getRating());
+                ps.setString(2, review.getContent());
+                ps.setString(3, review.getStatus().name());
+                ps.setString(4, review.getReviewId());
+                return ps.executeUpdate() > 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        // Tạo mới (Write mode)
         String sql = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -164,6 +195,33 @@ public class SqlReviewDAO implements IReviewRepository {
                 PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Review r = new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime());
+                    list.add(r);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public List<Review> findByUserId(String userId) {
+        List<Review> list = new ArrayList<>();
+        String sql = "SELECT * FROM Reviews WHERE user_id = ? AND status != 'HIDDEN' ORDER BY created_at DESC";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(

@@ -8,6 +8,7 @@ import application.services.ReviewService;
 import application.services.TriageService;
 import domain.entities.Product;
 import domain.entities.Review;
+import domain.entities.User;
 import infrastructure.ai.WekaProvider;
 import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlProductDAO;
@@ -21,6 +22,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 @WebServlet(name = "MainController", urlPatterns = { "/MainController" })
 public class MainController extends HttpServlet {
@@ -72,6 +74,16 @@ public class MainController extends HttpServlet {
                 } else {
                     request.setAttribute("ERROR", "Product not found!");
                     request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
+                }
+            } else if ("MyReviews".equals(action)) {
+                HttpSession session = request.getSession();
+                User user = (User) session.getAttribute("USER");
+                if (user != null) {
+                    List<Review> myReviews = reviewService.getReviewsByUser(user.getUserId());
+                    request.setAttribute("MY_REVIEWS", myReviews);
+                    request.getRequestDispatcher("/views/customer/my-reviews.jsp").forward(request, response);
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/login.jsp");
                 }
             } else {
                 // Default action: Lấy dữ liệu danh sách sản phẩm
