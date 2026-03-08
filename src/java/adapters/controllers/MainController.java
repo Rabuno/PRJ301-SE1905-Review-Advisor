@@ -31,6 +31,9 @@ public class MainController extends HttpServlet {
     @Override
     public void init() throws ServletException {
         try {
+            application.ports.IProductRepository productDAO = new SqlProductDAO();
+            this.productService = new ProductService(productDAO);
+
             IReviewRepository reviewDAO = new SqlReviewDAO();
             IUserRepository userDAO = new SqlUserDAO();
 
