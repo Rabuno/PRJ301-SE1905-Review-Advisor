@@ -16,7 +16,7 @@ public class SqlReviewDAO implements IReviewRepository {
     public boolean save(Review review) {
         String sql = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, review.getReviewId());
             ps.setString(2, review.getProductId());
@@ -47,7 +47,7 @@ public class SqlReviewDAO implements IReviewRepository {
                 PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, status.name());
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(
                             rs.getString("review_id"),
@@ -56,8 +56,7 @@ public class SqlReviewDAO implements IReviewRepository {
                             rs.getString("content"),
                             rs.getInt("rating"),
                             ReviewStatus.valueOf(rs.getString("status")),
-                            rs.getTimestamp("created_at").toLocalDateTime()
-                    );
+                            rs.getTimestamp("created_at").toLocalDateTime());
                     list.add(r);
                 }
             }
@@ -81,6 +80,12 @@ public class SqlReviewDAO implements IReviewRepository {
             e.printStackTrace();
             throw new RuntimeException("Lỗi cập nhật trạng thái Review: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void deleteReview(String reviewId) {
+        // Soft delete bằng cách chuyển status thành HIDDEN thay vì xóa vật lý
+        this.updateStatus(reviewId, ReviewStatus.HIDDEN);
     }
 
     @Override
@@ -246,12 +251,13 @@ public class SqlReviewDAO implements IReviewRepository {
         String sql = "SELECT COUNT(*) AS total_reviews FROM Reviews "
                 + "WHERE user_id = ? AND created_at >= DATEADD(hour, -?, GETDATE())";
 
-        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (java.sql.Connection conn = DBConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
             ps.setInt(2, hours);
 
-            try ( java.sql.ResultSet rs = ps.executeQuery()) {
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     count = rs.getInt("total_reviews");
                 }

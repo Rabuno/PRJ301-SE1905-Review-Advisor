@@ -12,6 +12,8 @@ public interface IReviewRepository {
 
     Review findById(String reviewId);
 
+    void deleteReview(String reviewId);
+
     List<Review> getReviewHistory(String reviewId);
 
     List<Review> findByStatus(ReviewStatus status);

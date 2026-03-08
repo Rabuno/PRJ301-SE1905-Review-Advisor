@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "ReviewServlet", urlPatterns = {"/ReviewServlet"})
+@WebServlet(name = "ReviewServlet", urlPatterns = { "/ReviewServlet" })
 public class ReviewServlet extends BaseServlet {
 
     private ReviewService reviewService;
@@ -54,6 +54,23 @@ public class ReviewServlet extends BaseServlet {
         String action = request.getParameter("action");
         if ("write".equals(action)) {
             forwardToView(request, response, "/views/customer/write-review.jsp");
+        } else if ("delete".equals(action)) {
+            try {
+                String reviewId = request.getParameter("reviewId");
+                String productId = request.getParameter("productId");
+
+                reviewService.deleteReview(reviewId);
+                request.getSession().setAttribute("SUCCESS_MSG", "Đã xóa đánh giá thành công!");
+
+                if (productId != null && !productId.isEmpty()) {
+                    redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
+                } else {
+                    redirect(request, response, "/MainController");
+                }
+            } catch (Exception e) {
+                request.getSession().setAttribute("ERROR", "Lỗi khi xóa đánh giá: " + e.getMessage());
+                redirect(request, response, "/MainController");
+            }
         } else {
             forwardToView(request, response, "/views/customer/product-detail.jsp");
         }
@@ -85,7 +102,8 @@ public class ReviewServlet extends BaseServlet {
             // 4. SỬA CHỮ KÝ HÀM: Truyền thêm username để AI tính toán Account Age
             reviewService.submitReview(newReview, currentUser.getUsername());
 
-            request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
+            request.getSession().setAttribute("SUCCESS_MSG",
+                    "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
             redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
 
         } catch (Exception e) {

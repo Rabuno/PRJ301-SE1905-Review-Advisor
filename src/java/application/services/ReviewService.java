@@ -56,8 +56,7 @@ public class ReviewService {
             // Tính số ngày từ lúc tạo đến hiện tại
             long days = ChronoUnit.DAYS.between(
                     user.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-                    LocalDate.now()
-            );
+                    LocalDate.now());
             return (double) days;
         }
         return 0.0; // Mặc định là tài khoản mới tạo (0 ngày) nếu lỗi
@@ -73,6 +72,10 @@ public class ReviewService {
     public void moderateReview(String reviewId, domain.enums.ReviewStatus newStatus) {
         // Có thể bổ sung logic lưu AuditLog tại đây trong tương lai
         reviewRepository.updateStatus(reviewId, newStatus);
+    }
+
+    public void deleteReview(String reviewId) {
+        reviewRepository.deleteReview(reviewId);
     }
 
     public List<Review> getReviewsByProduct(String productId) {
