@@ -6,12 +6,17 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class SqlUserDAO implements IUserRepository {
 
     @Override
     public User findByUsername(String username) {
+
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be null or empty");
+        }
 
         String sql = "SELECT u.user_id, u.username, u.password, u.role_id, u.created_at, r.role_name, p.permission_code "
                 + "FROM Users u "
@@ -27,7 +32,7 @@ public class SqlUserDAO implements IUserRepository {
             try ( ResultSet rs = stmt.executeQuery()) {
 
                 User user = null;
-                List<String> permissions = new ArrayList<>();
+                Set<String> permissions = new LinkedHashSet<>();
 
                 while (rs.next()) {
 
@@ -38,30 +43,27 @@ public class SqlUserDAO implements IUserRepository {
                                 rs.getString("password"));
                         user.setRoleId(rs.getString("role_id"));
                         user.setRole(rs.getString("role_name"));
+
+                        Timestamp createdAt = rs.getTimestamp("created_at");
+                        if (createdAt != null) {
+                            user.setCreatedAt(createdAt.toLocalDateTime());
+                        }
                     }
 
                     String perm = rs.getString("permission_code");
                     if (perm != null) {
                         permissions.add(perm);
                     }
-                    Timestamp createdAt = rs.getTimestamp("created_at");
-                    if (createdAt != null) {
-                        user.setCreatedAt(createdAt.toLocalDateTime());
-                    }
                 }
 
                 if (user != null) {
-                    user.setPermissions(permissions);
-
-                    System.out.println("User: " + username);
-                    System.out.println("Permissions: " + permissions);
-
+                    user.setPermissions(new ArrayList<>(permissions));
                     return user;
                 }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to authenticate user", e);
         }
 
         return null;
@@ -69,6 +71,10 @@ public class SqlUserDAO implements IUserRepository {
 
     @Override
     public boolean registerUser(User user, String roleName) {
+        if (user == null || roleName == null) {
+            throw new IllegalArgumentException("User and roleName cannot be null");
+        }
+
         String sql = "INSERT INTO Users (user_id, username, password, role_id) "
                 + "VALUES (?, ?, ?, (SELECT role_id FROM Roles WHERE role_name = ?))";
 
@@ -83,7 +89,6 @@ public class SqlUserDAO implements IUserRepository {
             return rowsAffected > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -91,16 +96,23 @@ public class SqlUserDAO implements IUserRepository {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-String sql = "SELECT user_id, username, password, role_id FROM Users";
+        String sql = "SELECT user_id, username, password, role_id, created_at FROM Users";
 
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql);  ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                users.add(new User(
+                User user = new User(
                         rs.getString("user_id"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role_id")));
+                        rs.getString("role_id"));
+
+                java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                if (createdAt != null) {
+                    user.setCreatedAt(createdAt.toLocalDateTime());
+                }
+
+                users.add(user);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -110,6 +122,11 @@ String sql = "SELECT user_id, username, password, role_id FROM Users";
 
     @Override
     public boolean updateUserRole(String userId, String roleId) {
+
+        if (userId == null || roleId == null) {
+            throw new IllegalArgumentException("UserId and roleId cannot be null");
+        }
+
         String sql = "UPDATE Users SET role_id = ? WHERE user_id = ?";
 
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
