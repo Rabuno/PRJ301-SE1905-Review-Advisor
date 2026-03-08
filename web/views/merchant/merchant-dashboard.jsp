@@ -96,15 +96,15 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('reviewTrendChart').getContext('2d');
-        // Backend sẽ truyền mảng dữ liệu thật vào đây (Tạm dùng mảng demo để render layout)
+        
         const trendChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'],
+                labels: ${not empty requestScope.CHART_LABELS ? requestScope.CHART_LABELS : "['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today']"},
                 datasets: [
                     {
                         label: 'Organic Reviews',
-                        data: [12, 19, 15, 25, 22, 30, 28], 
+                        data: ${not empty requestScope.CHART_ORGANIC_DATA ? requestScope.CHART_ORGANIC_DATA : "[12, 19, 15, 25, 22, 30, 28]"}, 
                         borderColor: '#198754',
                         backgroundColor: 'rgba(25, 135, 84, 0.1)',
                         borderWidth: 2,
@@ -113,7 +113,7 @@
                     },
                     {
                         label: 'Flagged (Spam/AI)',
-                        data: [1, 3, 0, 2, 5, 1, 0], 
+                        data: ${not empty requestScope.CHART_FLAGGED_DATA ? requestScope.CHART_FLAGGED_DATA : "[1, 3, 0, 2, 5, 1, 0]"}, 
                         borderColor: '#dc3545',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
                         borderWidth: 2,
