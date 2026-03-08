@@ -11,8 +11,8 @@ public class TriageService {
     private final WekaProvider wekaProvider;
     // Ghi chú: Cần tiêm IAlertRepository vào đây ở bước sau để lưu DB
 
-    // Ngưỡng phân loại thực nghiệm - Tạm nới lỏng thành 1.0 để test (Bypass AI)
-    private static final double RISK_THRESHOLD = 1.0;
+    // Ngưỡng phân loại thực nghiệm
+    private static final double RISK_THRESHOLD = 0.70;
     private static final double SUSPICIOUS_ACCOUNT_AGE = 30.0;
 
     public TriageService(WekaProvider wekaProvider) {
