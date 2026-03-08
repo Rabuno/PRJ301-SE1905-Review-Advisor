@@ -5,7 +5,6 @@ import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.*;
 import domain.entities.User;
-import domain.enums.RoleType;
 
 @WebFilter(urlPatterns = { "/*" })
 public class RoleFilter implements Filter {

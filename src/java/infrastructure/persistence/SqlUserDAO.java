@@ -5,6 +5,8 @@ import domain.entities.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 public class SqlUserDAO implements IUserRepository {
 
@@ -42,9 +44,9 @@ public class SqlUserDAO implements IUserRepository {
                     if (perm != null) {
                         permissions.add(perm);
                     }
-                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    Timestamp createdAt = rs.getTimestamp("created_at");
                     if (createdAt != null) {
-                        user.setCreatedAt(new java.util.Date(createdAt.getTime()));
+                        user.setCreatedAt(createdAt.toLocalDateTime());
                     }
                 }
 

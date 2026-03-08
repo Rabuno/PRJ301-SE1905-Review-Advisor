@@ -61,14 +61,17 @@ public class ReviewService {
     // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ---
     private double calculateAccountAge(String username) {
         User user = userRepository.findByUsername(username);
+
         if (user != null && user.getCreatedAt() != null) {
-            // Tính số ngày từ lúc tạo đến hiện tại
-            long days = ChronoUnit.DAYS.between(
-                    user.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-                    LocalDate.now());
+            // Trích xuất phần ngày (LocalDate) từ LocalDateTime để đối chiếu với LocalDate.now()
+            long days = java.time.temporal.ChronoUnit.DAYS.between(
+                    user.getCreatedAt().toLocalDate(),
+                    java.time.LocalDate.now()
+            );
             return (double) days;
         }
-        return 0.0; // Mặc định là tài khoản mới tạo (0 ngày) nếu lỗi
+
+        return 0.0; // Mặc định là tài khoản mới tạo (0 ngày) nếu có lỗi
     }
 
     // --- CÁC HÀM DÀNH CHO LUỒNG MODERATOR (KIỂM DUYỆT) ---
