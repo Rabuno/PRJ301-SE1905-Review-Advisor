@@ -35,17 +35,26 @@ public class ReviewService {
         // Giả sử đếm số review trong 1 giờ qua để tính Burst Rate
         double burstRate = (double) reviewRepository.countRecentReviewsByUser(review.getUserId(), 1);
 
-        // 2. Chuyển giao cho Trí tuệ Nhân tạo sàng lọc (AI Triage)
-        Alert alert = triageService.evaluateReview(review, accountAgeDays, burstRate);
+        // 2. Chạy Trí tuệ Nhân tạo sàng lọc (AI Triage) an toàn
+        Alert alert = null;
+        try {
+            alert = triageService.evaluateReview(review, accountAgeDays, burstRate);
+        } catch (Exception e) {
+            System.err.println("Lỗi AI Evaluation: " + e.getMessage());
+            review.setStatus(domain.enums.ReviewStatus.PENDING); // An toàn
+        }
 
-        // 3. Lưu trữ Đánh giá (Trạng thái đã được TriageService quyết định)
+        // 3. Lưu trữ Đánh giá
         boolean isReviewSaved = reviewRepository.save(review);
 
         // 4. Lưu trữ Gói Cảnh báo (Nếu có)
         if (isReviewSaved && alert != null) {
-            alertRepository.saveAlert(alert);
+            try {
+                alertRepository.saveAlert(alert);
+            } catch (Exception e) {
+                System.err.println("Lỗi lưu Alert: " + e.getMessage());
+            }
         }
-
         return isReviewSaved;
     }
 

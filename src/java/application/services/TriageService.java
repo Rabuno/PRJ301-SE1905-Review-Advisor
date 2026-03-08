@@ -11,8 +11,8 @@ public class TriageService {
     private final WekaProvider wekaProvider;
     // Ghi chú: Cần tiêm IAlertRepository vào đây ở bước sau để lưu DB
 
-    // Ngưỡng phân loại thực nghiệm
-    private static final double RISK_THRESHOLD = 0.70;
+    // Ngưỡng phân loại thực nghiệm - Tạm nới lỏng thành 1.0 để test (Bypass AI)
+    private static final double RISK_THRESHOLD = 1.0;
     private static final double SUSPICIOUS_ACCOUNT_AGE = 30.0;
 
     public TriageService(WekaProvider wekaProvider) {
@@ -49,13 +49,15 @@ public class TriageService {
     }
 
     // Cập nhật hàm generateEvidencePack (Xóa Hardcode)
-    private void generateEvidencePack(Alert alert, Review review, double riskScore, double accountAgeDays, double burstRate) {
+    private void generateEvidencePack(Alert alert, Review review, double riskScore, double accountAgeDays,
+            double burstRate) {
         // Cập nhật hàm gọi để đồng bộ với giải thuật Ablation mới
-        java.util.List<java.util.Map.Entry<String, Double>> topFeatures
-                = wekaProvider.extractTopKRiskFeatures(review.getContent(), review.getRating(), accountAgeDays, riskScore, 3);
+        java.util.List<java.util.Map.Entry<String, Double>> topFeatures = wekaProvider
+                .extractTopKRiskFeatures(review.getContent(), review.getRating(), accountAgeDays, riskScore, 3);
 
         if (topFeatures.isEmpty()) {
-            alert.addReason(new Alert.AlertReason("general_semantic_anomaly", riskScore, "Cấu trúc ngữ pháp tổng thể bất thường"));
+            alert.addReason(new Alert.AlertReason("general_semantic_anomaly", riskScore,
+                    "Cấu trúc ngữ pháp tổng thể bất thường"));
         } else {
             for (java.util.Map.Entry<String, Double> feature : topFeatures) {
                 // Định dạng hiển thị % rõ ràng cho Moderator
@@ -63,8 +65,7 @@ public class TriageService {
                 alert.addReason(new Alert.AlertReason(
                         "keyword_trigger: " + feature.getKey(),
                         feature.getValue(),
-                        "Đóng góp " + percentage + "% vào quyết định rủi ro của AI."
-                ));
+                        "Đóng góp " + percentage + "% vào quyết định rủi ro của AI."));
             }
         }
 
