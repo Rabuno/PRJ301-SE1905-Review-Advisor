@@ -51,11 +51,11 @@ CREATE TABLE Users (
 CREATE TABLE Products (
     product_id VARCHAR(50) PRIMARY KEY, 
     name NVARCHAR(255) NOT NULL, 
-    category NVARCHAR(100), 
     description NVARCHAR(MAX), 
     price DECIMAL(18,2), 
+    category NVARCHAR(100) DEFAULT 'Uncategorized',
+    image_url NVARCHAR(500),
     merchant_id VARCHAR(50) NOT NULL, 
-    image_url VARCHAR(255), 
     status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('ACTIVE', 'DEACTIVATED', 'PENDING')), 
     created_at DATETIME DEFAULT GETDATE(), 
     FOREIGN KEY (merchant_id) REFERENCES Users(user_id)
@@ -67,6 +67,7 @@ CREATE TABLE Reviews (
     user_id VARCHAR(50) NOT NULL, 
     rating INT CHECK (rating >= 1 AND rating <= 5), 
     content NVARCHAR(MAX), 
+    image_url VARCHAR(255),
     status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PUBLISHED', 'HIDDEN', 'FLAGGED', 'DELETED')), 
     created_at DATETIME DEFAULT GETDATE(), 
     updated_at DATETIME DEFAULT GETDATE(), 
@@ -156,11 +157,11 @@ INSERT INTO Users (user_id, username, password, role_id, created_at) VALUES
 ('U_CUST2', 'seeding_bot_01', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'CUSTOMER'), DATEADD(day, -2, GETDATE())), 
 ('U_CUST3', 'hieu_foodie', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'CUSTOMER'), DATEADD(day, -120, GETDATE()));
 
--- Cơ sở dịch vụ (Products mapping to Properties)
-INSERT INTO Products (product_id, name, category, description, price, merchant_id, image_url, status) VALUES
-('P_PROP1', N'JW Marriott Hotel Hanoi', N'Accommodation', N'Khách sạn 5 sao sang trọng với thiết kế lấy cảm hứng từ con rồng huyền thoại.', 4500000, 'U_MERCH1', '/assets/img/marriott_hn.jpg', 'ACTIVE'),
-('P_PROP2', N'French Grill - JW Marriott', N'Dining', N'Nhà hàng Pháp cao cấp, phục vụ bò Wagyu và hải sản nhập khẩu.', 2000000, 'U_MERCH1', '/assets/img/french_grill.jpg', 'ACTIVE'),
-('P_PROP3', N'Pizza 4P''s Tràng Tiền', N'Dining', N'Pizza kiểu Nhật kết hợp Ý, nổi tiếng với phô mai Burrata tự làm.', 350000, 'U_MERCH2', '/assets/img/pizza_4ps.jpg', 'ACTIVE');
+-- Co so dich vu (Products mapping to Properties)
+INSERT INTO Products (product_id, name, description, price, category, merchant_id, image_url, status) VALUES
+('P_PROP1', N'JW Marriott Hotel Hanoi', N'Khach san 5 sao sang trong voi thiet ke lay cam hung tu con rong huyen thoai.', 4500000, N'Accommodation', 'U_MERCH1', 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop', 'ACTIVE'),
+('P_PROP2', N'French Grill - JW Marriott', N'Nha hang Phap cao cap, phuc vu bo Wagyu va hai san nhap khau.', 2000000, N'Dining', 'U_MERCH1', 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop', 'ACTIVE'),
+('P_PROP3', N'Pizza 4P''s Trang Tien', N'Pizza kieu Nhat ket hop Y, noi tieng voi pho mai Burrata tu lam.', 350000, N'Dining', 'U_MERCH2', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=600&fit=crop', 'ACTIVE');
 
 -- Đánh giá (Reviews)
 INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) VALUES 

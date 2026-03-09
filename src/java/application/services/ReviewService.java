@@ -6,7 +6,7 @@ import application.ports.IAlertRepository;
 import domain.entities.Review;
 import domain.entities.User;
 import domain.entities.Alert;
-import domain.enums.Status;
+import domain.entities.ReviewStatus;
 import java.util.List;
 
 public class ReviewService {
@@ -36,10 +36,14 @@ public class ReviewService {
         // 2. Chạy Trí tuệ Nhân tạo sàng lọc (AI Triage) an toàn
         Alert alert = null;
         try {
-            alert = triageService.evaluateReview(review, accountAgeDays, burstRate);
+            if (triageService != null) {
+                alert = triageService.evaluateReview(review, accountAgeDays, burstRate);
+            } else {
+                review.setStatus(ReviewStatus.PENDING); // Khong co AI, de PENDING
+            }
         } catch (Exception e) {
             System.err.println("Lỗi AI Evaluation: " + e.getMessage());
-            review.setStatus(Status.PENDING); // An toàn
+            review.setStatus(ReviewStatus.PENDING); // An toan
         }
 
         // 3. Lưu trữ Đánh giá
@@ -61,11 +65,11 @@ public class ReviewService {
         User user = userRepository.findByUsername(username);
 
         if (user != null && user.getCreatedAt() != null) {
-            // Trích xuất phần ngày (LocalDate) từ LocalDateTime để đối chiếu với LocalDate.now()
+            // Trích xuất phần ngày (LocalDate) từ LocalDateTime để đối chiếu với
+            // LocalDate.now()
             long days = java.time.temporal.ChronoUnit.DAYS.between(
                     user.getCreatedAt().toLocalDate(),
-                    java.time.LocalDate.now()
-            );
+                    java.time.LocalDate.now());
             return (double) days;
         }
 

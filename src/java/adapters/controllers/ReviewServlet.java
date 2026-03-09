@@ -22,6 +22,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.http.Part;
+import application.ports.IStorageService;
+import infrastructure.storage.LocalDiskStorageService;
+import java.io.File;
 
 @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2MB
         maxFileSize = 1024 * 1024 * 10, // 10MB
@@ -115,17 +119,31 @@ public class ReviewServlet extends BaseServlet {
             int rating = Integer.parseInt(request.getParameter("rating"));
 
             String action = request.getParameter("action");
+
+            // Handle image upload
+            String imageUrl = null;
+            Part filePart = request.getPart("reviewImage");
+            if (filePart != null && filePart.getSize() > 0) {
+                String fileName = filePart.getSubmittedFileName();
+                String uploadPath = request.getServletContext().getRealPath("") + File.separator + "uploads";
+                IStorageService dynStorageService = new LocalDiskStorageService(uploadPath,
+                        request.getContextPath() + "/uploads");
+                imageUrl = dynStorageService.saveFile(filePart.getInputStream(), fileName);
+            }
+
             if ("update".equals(action)) {
                 String existingReviewId = request.getParameter("reviewId");
                 Review updatedReview = new Review(existingReviewId, productId, currentUser.getUserId(), content,
-                        rating);
+                        rating, imageUrl); // Mới thêm imageUrl
                 reviewService.submitReview(updatedReview, currentUser.getUsername()); // Re-runs AI triage
 
                 request.getSession().setAttribute("SUCCESS_MSG", "Đánh giá của bạn đã được cập nhật thành công!");
                 redirect(request, response, "/MainController?action=MyReviews");
             } else {
                 String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
+                Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating, imageUrl); // Mới
+                                                                                                                        // thêm
+                                                                                                                        // imageUrl
                 reviewService.submitReview(newReview, currentUser.getUsername());
 
                 request.getSession().setAttribute("SUCCESS_MSG",

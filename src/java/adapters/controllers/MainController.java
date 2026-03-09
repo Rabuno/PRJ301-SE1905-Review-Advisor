@@ -85,8 +85,21 @@ public class MainController extends HttpServlet {
                 } else {
                     response.sendRedirect(request.getContextPath() + "/login.jsp");
                 }
+            } else if ("FilterByCategory".equals(action)) {
+                // Loc san pham theo danh muc
+                // UI: goi ?action=FilterByCategory&category=Hotel
+                String category = request.getParameter("category");
+                List<Product> products;
+                if (category != null && !category.trim().isEmpty()) {
+                    products = productService.getProductsByCategory(category.trim());
+                    request.setAttribute("ACTIVE_CATEGORY", category.trim()); // UI dung de highlight tab dang chon
+                } else {
+                    products = productService.getAllProducts();
+                }
+                request.setAttribute("PRODUCT_LIST", products);
+                request.getRequestDispatcher("/views/customer/index.jsp").forward(request, response);
             } else {
-                // Default action: Lấy dữ liệu danh sách sản phẩm
+                // Default: Lay danh sach tat ca san pham
                 List<Product> products = productService.getAllProducts();
                 request.setAttribute("PRODUCT_LIST", products);
                 request.getRequestDispatcher("/views/customer/index.jsp").forward(request, response);

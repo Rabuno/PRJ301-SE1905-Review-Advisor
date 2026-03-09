@@ -39,12 +39,14 @@ public class RoleFilter implements Filter {
 
         User user = (User) session.getAttribute("USER");
 
-        if (uri.contains("/ModeratorServlet") && !user.hasPermission("PERM_MODERATE_ACTION")) {
+        if (uri.contains("/ModeratorServlet") && !user.hasPermission("PERM_MODERATE_ACTION")
+                && !"ADMIN".equals(user.getRole())) {
             res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
             return;
         }
 
-        if (uri.contains("/AuditServlet") && !user.hasPermission("PERM_AUDIT_READ")) {
+        if (uri.contains("/AuditServlet") && !user.hasPermission("PERM_AUDIT_READ")
+                && !"ADMIN".equals(user.getRole())) {
             res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
             return;
         }

@@ -1,25 +1,23 @@
 package domain.entities;
 
-import domain.enums.Status;
-
 public class Product {
     private String productId;
     private String name;
-    private String category;
     private String description;
     private double price;
-    private Status status;
+    private String category;
+    private String status;
     private String merchantId;
     private String imageUrl;
 
-    public Product(String productId, String name, String category, String description, double price, String merchantId,
-            String imageUrl) {
+    public Product(String productId, String name, String description, double price, String category, String status,
+            String merchantId, String imageUrl) {
         this.productId = productId;
         this.name = name;
-        this.category = category;
         this.description = description;
         this.price = price;
-        this.status = Status.PENDING;
+        this.category = category;
+        this.status = status;
         this.merchantId = merchantId;
         this.imageUrl = imageUrl;
     }
@@ -44,16 +42,8 @@ public class Product {
         return category;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public Status getStatus() {
+    public String getStatus() {
         return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
     }
 
     public String getMerchantId() {
