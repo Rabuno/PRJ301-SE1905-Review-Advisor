@@ -26,16 +26,18 @@ public class ModeratorServlet extends HttpServlet {
         try {
             application.ports.IReviewRepository reviewDAO = new infrastructure.persistence.SqlReviewDAO();
             application.ports.IUserRepository userDAO = new infrastructure.persistence.SqlUserDAO();
+            application.ports.IAlertRepository alertDAO = new infrastructure.persistence.SqlAlertDAO();
 
-            // Dummy AlertDAO cho đến khi có DB thật
-            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+            // ĐIỂM CẬP NHẬT: Khởi tạo IFileStoragePort để khớp với ReviewService mới
+            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
+            application.ports.IFileStoragePort storagePort = new infrastructure.storage.LocalFileStorageAdapter(uploadDirPath);
 
-            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            // Định vị tệp Model Weka
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
             application.services.TriageService triageService = new application.services.TriageService(new infrastructure.ai.WekaProvider(modelPath));
 
-            // Khởi tạo thành công
-            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+            // Bổ sung tham số storagePort vào Constructor
+            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
 
         } catch (Exception e) {
             throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());

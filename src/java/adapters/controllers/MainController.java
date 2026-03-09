@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "MainController", urlPatterns = { "/MainController" })
+@WebServlet(name = "MainController", urlPatterns = {"/MainController"})
 public class MainController extends HttpServlet {
 
     private ProductService productService;
@@ -33,25 +33,23 @@ public class MainController extends HttpServlet {
     @Override
     public void init() throws ServletException {
         try {
-            application.ports.IProductRepository productDAO = new SqlProductDAO();
-            this.productService = new ProductService(productDAO);
+            application.ports.IReviewRepository reviewDAO = new infrastructure.persistence.SqlReviewDAO();
+            application.ports.IUserRepository userDAO = new infrastructure.persistence.SqlUserDAO();
+            application.ports.IAlertRepository alertDAO = new infrastructure.persistence.SqlAlertDAO();
 
-            IReviewRepository reviewDAO = new SqlReviewDAO();
-            IUserRepository userDAO = new SqlUserDAO();
+            // ĐIỂM CẬP NHẬT: Khởi tạo IFileStoragePort để khớp với ReviewService mới
+            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
+            application.ports.IFileStoragePort storagePort = new infrastructure.storage.LocalFileStorageAdapter(uploadDirPath);
 
-            // 1. KỸ THUẬT MOCKING: Giả lập AlertDAO tạm thời để code không báo đỏ chờ DB
-            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
-
-            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            // Định vị tệp Model Weka
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
-            TriageService triageService = new TriageService(new WekaProvider(modelPath));
+            application.services.TriageService triageService = new application.services.TriageService(new infrastructure.ai.WekaProvider(modelPath));
 
-            // 3. Khởi tạo ReviewService chính thức (Gán vào biến instance)
-            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+            // Bổ sung tham số storagePort vào Constructor
+            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new ServletException("Lỗi khởi tạo ReviewServlet do Weka Model: " + e.getMessage());
+            throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());
         }
     }
 

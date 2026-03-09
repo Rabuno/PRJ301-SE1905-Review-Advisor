@@ -3,10 +3,12 @@ package application.services;
 import application.ports.IReviewRepository;
 import application.ports.IUserRepository;
 import application.ports.IAlertRepository;
+import application.ports.IFileStoragePort;
 import domain.entities.Review;
 import domain.entities.User;
 import domain.entities.Alert;
 import domain.enums.Status;
+import java.io.InputStream;
 import java.util.List;
 
 public class ReviewService {
@@ -15,19 +17,33 @@ public class ReviewService {
     private final IUserRepository userRepository;
     private final IAlertRepository alertRepository;
     private final TriageService triageService;
+    private final IFileStoragePort storagePort;
 
     // Cập nhật Constructor để tiêm (Inject) đủ các Repository cần thiết
     public ReviewService(IReviewRepository reviewRepository,
             IUserRepository userRepository,
             IAlertRepository alertRepository,
-            TriageService triageService) {
+            TriageService triageService,
+            IFileStoragePort storagePort) {
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.alertRepository = alertRepository;
         this.triageService = triageService;
+        this.storagePort = storagePort;
     }
 
-    public boolean submitReview(Review review, String username) {
+    public boolean submitReview(Review review, String username, InputStream imageStream, String extension) throws Exception {
+        // 1. Xử lý lưu trữ tệp tin (I/O Operation) trước khi can thiệp cơ sở dữ liệu
+        if (imageStream != null && extension != null && !extension.isEmpty()) {
+            String imageUrl = storagePort.saveFile(imageStream, extension);
+            review.setImageUrl(imageUrl);
+        }
+
+        // 2. Chuyển giao thực thể đã được làm giàu (enriched entity) cho luồng xử lý lõi
+        return submitReviewAI(review, username);
+    }
+    
+    private boolean submitReviewAI(Review review, String username) {
         // 1. Thu thập Siêu dữ liệu (Metadata) cho Mô hình Đa biến
         double accountAgeDays = calculateAccountAge(username);
         // Giả sử đếm số review trong 1 giờ qua để tính Burst Rate
