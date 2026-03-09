@@ -9,24 +9,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SqlProductDAO implements IProductRepository {
+
     @Override
     public List<Product> findAll() {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, description, price, merchant_id FROM Products";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Product p = new Product(
                         rs.getString("product_id"),
                         rs.getString("name"),
+                        rs.getString("category"),
                         rs.getString("description"),
                         rs.getDouble("price"),
                         rs.getString("merchant_id"),
                         "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop"); // Default
-                                                                                                              // image
-                                                                                                              // for UI
+                // image
+                // for UI
                 list.add(p);
             }
         } catch (Exception e) {
@@ -38,10 +38,9 @@ public class SqlProductDAO implements IProductRepository {
     @Override
     public int countByMerchantId(String merchantId) {
         String sql = "SELECT COUNT(*) FROM Products WHERE merchant_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, merchantId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1);
                 }
@@ -55,22 +54,22 @@ public class SqlProductDAO implements IProductRepository {
     @Override
     public Product findById(String productId) {
         String sql = "SELECT product_id, name, description, price, merchant_id FROM Products WHERE product_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, productId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new Product(
                             rs.getString("product_id"),
                             rs.getString("name"),
+                            rs.getString("category"),
                             rs.getString("description"),
                             rs.getDouble("price"),
                             rs.getString("merchant_id"),
                             "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop"); // Default
-                                                                                                                  // image
-                                                                                                                  // for
-                                                                                                                  // UI
+                    // image
+                    // for
+                    // UI
                 }
             }
         } catch (Exception e) {

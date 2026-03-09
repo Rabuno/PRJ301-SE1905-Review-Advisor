@@ -6,9 +6,7 @@ import application.ports.IAlertRepository;
 import domain.entities.Review;
 import domain.entities.User;
 import domain.entities.Alert;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
+import domain.enums.Status;
 import java.util.List;
 
 public class ReviewService {
@@ -41,7 +39,7 @@ public class ReviewService {
             alert = triageService.evaluateReview(review, accountAgeDays, burstRate);
         } catch (Exception e) {
             System.err.println("Lỗi AI Evaluation: " + e.getMessage());
-            review.setStatus(domain.enums.ReviewStatus.PENDING); // An toàn
+            review.setStatus(Status.PENDING); // An toàn
         }
 
         // 3. Lưu trữ Đánh giá
@@ -77,11 +75,11 @@ public class ReviewService {
     // --- CÁC HÀM DÀNH CHO LUỒNG MODERATOR (KIỂM DUYỆT) ---
     // Lấy danh sách bài bị AI cắm cờ
     public java.util.List<Review> getFlaggedReviews() {
-        return reviewRepository.findByStatus(domain.enums.ReviewStatus.FLAGGED);
+        return reviewRepository.findByStatus(Status.FLAGGED);
     }
 
     // Xử lý quyết định của con người (Approve/Reject)
-    public void moderateReview(String reviewId, domain.enums.ReviewStatus newStatus) {
+    public void moderateReview(String reviewId, Status newStatus) {
         // Có thể bổ sung logic lưu AuditLog tại đây trong tương lai
         reviewRepository.updateStatus(reviewId, newStatus);
     }

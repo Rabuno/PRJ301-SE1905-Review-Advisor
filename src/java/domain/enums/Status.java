@@ -1,6 +1,6 @@
 package domain.enums;
 
-public enum ReviewStatus {
+public enum Status {
     PENDING,    // Đang chờ AI đánh giá
     PUBLISHED,  // Đã hiển thị công khai
     HIDDEN,     // Bị ẩn bởi người dùng hoặc hệ thống

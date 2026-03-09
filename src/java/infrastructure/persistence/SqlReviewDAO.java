@@ -2,7 +2,7 @@ package infrastructure.persistence;
 
 import application.ports.IReviewRepository;
 import domain.entities.Review;
-import domain.enums.ReviewStatus;
+import domain.enums.Status;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,7 +71,7 @@ public class SqlReviewDAO implements IReviewRepository {
     }
 
     @Override
-    public List<Review> findByStatus(ReviewStatus status) {
+    public List<Review> findByStatus(Status status) {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM Reviews WHERE status = ? ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection();
@@ -86,7 +86,7 @@ public class SqlReviewDAO implements IReviewRepository {
                             rs.getString("user_id"),
                             rs.getString("content"),
                             rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
+                            Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toLocalDateTime());
                     list.add(r);
                 }
@@ -98,7 +98,7 @@ public class SqlReviewDAO implements IReviewRepository {
     }
 
     @Override
-    public void updateStatus(String reviewId, ReviewStatus newStatus) {
+    public void updateStatus(String reviewId, Status newStatus) {
         String sql = "UPDATE Reviews SET status = ?, updated_at = GETDATE() WHERE review_id = ?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -116,7 +116,7 @@ public class SqlReviewDAO implements IReviewRepository {
     @Override
     public void deleteReview(String reviewId) {
         // Soft delete bằng cách chuyển status thành HIDDEN thay vì xóa vật lý
-        this.updateStatus(reviewId, ReviewStatus.HIDDEN);
+        this.updateStatus(reviewId, Status.HIDDEN);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class SqlReviewDAO implements IReviewRepository {
                             rs.getString("user_id"),
                             rs.getString("content"),
                             rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
+                            Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toLocalDateTime());
                 }
             }
@@ -175,7 +175,7 @@ public class SqlReviewDAO implements IReviewRepository {
                                 rs.getString("user_id"),
                                 rs.getString("content"),
                                 rs.getInt("rating"),
-                                ReviewStatus.valueOf(rs.getString("status")),
+                                Status.valueOf(rs.getString("status")),
                                 rs.getTimestamp("created_at").toLocalDateTime()));
                     }
                 }
@@ -203,7 +203,7 @@ public class SqlReviewDAO implements IReviewRepository {
                             rs.getString("user_id"),
                             rs.getString("content"),
                             rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
+                            Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toLocalDateTime());
                     list.add(r);
                 }
@@ -230,7 +230,7 @@ public class SqlReviewDAO implements IReviewRepository {
                             rs.getString("user_id"),
                             rs.getString("content"),
                             rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
+                            Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toLocalDateTime());
                     list.add(r);
                 }
@@ -292,7 +292,7 @@ public class SqlReviewDAO implements IReviewRepository {
                             rs.getString("user_id"),
                             rs.getString("content"),
                             rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
+                            Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toLocalDateTime()));
                 }
             }

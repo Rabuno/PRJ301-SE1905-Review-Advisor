@@ -1,6 +1,6 @@
 package domain.entities;
 
-import domain.enums.ReviewStatus;
+import domain.enums.Status;
 import java.time.LocalDateTime;
 
 public class Review {
@@ -10,7 +10,7 @@ public class Review {
     private String userId;
     private String content;
     private int rating;
-    private ReviewStatus status;
+    private Status status;
     private LocalDateTime createdAt;
 
     // Constructor phục vụ việc tạo Review mới từ Customer
@@ -20,12 +20,12 @@ public class Review {
         this.userId = userId;
         this.content = content;
         this.rating = rating;
-        this.status = ReviewStatus.PENDING;
+        this.status = Status.PENDING;
         this.createdAt = LocalDateTime.now();
     }
 
     // Constructor phục vụ việc tái tạo đối tượng từ cơ sở dữ liệu
-    public Review(String reviewId, String productId, String userId, String content, int rating, ReviewStatus status, LocalDateTime createdAt) {
+    public Review(String reviewId, String productId, String userId, String content, int rating, Status status, LocalDateTime createdAt) {
         this.reviewId = reviewId;
         this.productId = productId;
         this.userId = userId;
@@ -48,11 +48,11 @@ public class Review {
         return rating;
     }
 
-    public ReviewStatus getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(ReviewStatus status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 
