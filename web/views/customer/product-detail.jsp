@@ -18,8 +18,19 @@
         <div class="row">
             <div class="col-md-5 mb-4">
                 <div class="card shadow-sm border-0 rounded-3 sticky-top" style="top: 20px;">
-                    <img src="${not empty requestScope.PRODUCT.imageUrl ? requestScope.PRODUCT.imageUrl : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop'}"
-                        class="card-img-top" alt="${requestScope.PRODUCT.name}">
+                    
+                    <c:choose>
+                        <c:when test="${not empty requestScope.PRODUCT.imageUrl}">
+                            <img src="<c:url value='${requestScope.PRODUCT.imageUrl}' />"
+                                 class="card-img-top" 
+                                 alt="${requestScope.PRODUCT.name}">
+                        </c:when>
+                        <c:otherwise>
+                            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop"
+                                 class="card-img-top" 
+                                 alt="${not empty requestScope.PRODUCT ? requestScope.PRODUCT.name : 'Unknown Product'}">
+                        </c:otherwise>
+                    </c:choose>
 
                     <div class="card-body p-4">
                         <h2 class="fw-bold text-primary mb-2">${not empty requestScope.PRODUCT ? requestScope.PRODUCT.name : 'Unknown Product'}</h2>
