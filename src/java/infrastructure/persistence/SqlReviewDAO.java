@@ -263,6 +263,32 @@ public class SqlReviewDAO implements IReviewRepository {
     }
 
     @Override
+    public List<Review> findByUserId(String userId) {
+        List<Review> list = new ArrayList<>();
+        String sql = "SELECT * FROM Reviews WHERE user_id = ? AND status != 'HIDDEN' ORDER BY created_at DESC";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, userId);
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Review r = new Review(
+                            rs.getString("review_id"),
+                            rs.getString("product_id"),
+                            rs.getString("user_id"),
+                            rs.getString("content"),
+                            rs.getInt("rating"),
+                            ReviewStatus.valueOf(rs.getString("status")),
+                            rs.getTimestamp("created_at").toLocalDateTime());
+                    list.add(r);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
     public Object[] getReviewStatsByMerchant(String merchantId) {
         String sql = "SELECT " +
                 "  AVG(CAST(r.rating AS FLOAT)) as avg_rating, " +
