@@ -315,4 +315,98 @@ public class SqlReviewDAO implements IReviewRepository {
         }
         return count;
     }
+
+    @Override
+    public List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts() {
+        List<application.dto.AlertDashboardDTO> list = new ArrayList<>();
+
+        // Truy vấn lõi kết hợp Reviews và Alerts
+        String sql = "SELECT r.review_id, r.content, r.rating, r.created_at, "
+                + "a.risk_score "
+                + "FROM Reviews r "
+                + "LEFT JOIN Alerts a ON r.review_id = a.review_id "
+                + "WHERE r.status = 'FLAGGED' ORDER BY r.created_at DESC";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                application.dto.AlertDashboardDTO dto = new application.dto.AlertDashboardDTO();
+                String reviewId = rs.getString("review_id");
+
+                dto.setReviewId(reviewId);
+                dto.setContent(rs.getString("content"));
+                dto.setRating(rs.getInt("rating"));
+                dto.setCreatedAt(rs.getTimestamp("created_at").toString());
+
+                // Xử lý Risk Score
+                double riskScore = rs.getDouble("risk_score");
+                if (!rs.wasNull()) {
+                    dto.setRiskScore(riskScore);
+                }
+
+                // Ánh xạ phân cấp thông qua Helper Methods
+                dto.setEvidence(getEvidencesForReview(reviewId, conn));
+                dto.setAiFeatures(getReasonsForReview(reviewId, conn));
+
+                list.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+// Hàm phụ trợ 1: Ánh xạ cấu trúc AlertEvidences
+    private java.util.Map<String, Object> getEvidencesForReview(String reviewId, Connection conn) throws java.sql.SQLException {
+        java.util.Map<String, Object> evidenceMap = new java.util.HashMap<>();
+        String sql = "SELECT ae.rule_type, ae.measured_value "
+                + "FROM AlertEvidences ae "
+                + "JOIN Alerts a ON ae.alert_id = a.alert_id "
+                + "WHERE a.review_id = ?";
+
+        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, reviewId);
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String ruleType = rs.getString("rule_type");
+                    double value = rs.getDouble("measured_value");
+
+                    // Đồng bộ hóa Key với EL của giao diện dashboard.jsp
+                    if ("BURST_RATE".equals(ruleType)) {
+                        evidenceMap.put("burstScore", value);
+                    } else if ("ACCOUNT_AGE".equals(ruleType)) {
+                        evidenceMap.put("accountAge", value);
+                    } else {
+                        evidenceMap.put(ruleType.toLowerCase(), value); // Fallback định dạng
+                    }
+                }
+            }
+        }
+        return evidenceMap;
+    }
+
+// Hàm phụ trợ 2: Ánh xạ cấu trúc AlertReasons
+    private List<application.dto.AlertDashboardDTO.AIFeatureDTO> getReasonsForReview(String reviewId, Connection conn) throws java.sql.SQLException {
+        List<application.dto.AlertDashboardDTO.AIFeatureDTO> features = new ArrayList<>();
+        String sql = "SELECT ar.feature_name, ar.importance_weight "
+                + "FROM AlertReasons ar "
+                + "JOIN Alerts a ON ar.alert_id = a.alert_id "
+                + "WHERE a.review_id = ? "
+                + "ORDER BY ar.importance_weight DESC"; // Đẩy Feature quan trọng nhất lên đầu (Top-K)
+
+        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, reviewId);
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String featureName = rs.getString("feature_name");
+                    double weight = rs.getDouble("importance_weight");
+
+                    // Chuyển đổi Decimal (0.3840) sang dạng tỷ lệ phần trăm (38%)
+                    int score = (int) Math.round(weight * 100);
+                    features.add(new application.dto.AlertDashboardDTO.AIFeatureDTO(featureName, score));
+                }
+            }
+        }
+        return features;
+    }
 }

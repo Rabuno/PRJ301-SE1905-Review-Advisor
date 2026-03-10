@@ -1,10 +1,22 @@
 package adapters.controllers;
 
 import application.dto.MerchantStatsDTO;
+import application.ports.IAlertRepository;
+import application.ports.IFileStoragePort;
+import application.ports.IProductRepository;
+import application.ports.IReviewRepository;
+import application.ports.IUserRepository;
 import application.services.ProductService;
 import application.services.ReviewService;
+import application.services.TriageService;
 import domain.entities.Review;
 import domain.entities.User;
+import infrastructure.ai.WekaProvider;
+import infrastructure.persistence.SqlAlertDAO;
+import infrastructure.persistence.SqlProductDAO;
+import infrastructure.persistence.SqlReviewDAO;
+import infrastructure.persistence.SqlUserDAO;
+import infrastructure.storage.LocalFileStorageAdapter;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,20 +35,22 @@ public class MerchantServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         try {
-            application.ports.IReviewRepository reviewDAO = new infrastructure.persistence.SqlReviewDAO();
-            application.ports.IUserRepository userDAO = new infrastructure.persistence.SqlUserDAO();
-            application.ports.IAlertRepository alertDAO = new infrastructure.persistence.SqlAlertDAO();
+            IReviewRepository reviewDAO = new SqlReviewDAO();
+            IUserRepository userDAO = new SqlUserDAO();
+            IAlertRepository alertDAO = new SqlAlertDAO();
+            IProductRepository productDAO = new SqlProductDAO();
 
             // ĐIỂM CẬP NHẬT: Khởi tạo IFileStoragePort để khớp với ReviewService mới
             String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
-            application.ports.IFileStoragePort storagePort = new infrastructure.storage.LocalFileStorageAdapter(uploadDirPath);
+            IFileStoragePort storagePort = new LocalFileStorageAdapter(uploadDirPath);
 
             // Định vị tệp Model Weka
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
-            application.services.TriageService triageService = new application.services.TriageService(new infrastructure.ai.WekaProvider(modelPath));
+            TriageService triageService = new TriageService(new WekaProvider(modelPath));
 
             // Bổ sung tham số storagePort vào Constructor
-            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
+            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
+            this.productService = new ProductService(productDAO);
 
         } catch (Exception e) {
             throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());

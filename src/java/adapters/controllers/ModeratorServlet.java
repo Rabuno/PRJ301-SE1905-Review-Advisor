@@ -46,11 +46,12 @@ public class ModeratorServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            // Lấy danh sách các đánh giá đang bị giam (FLAGGED)
-            List<Review> flaggedReviews = reviewService.getFlaggedReviews();
+            // CẬP NHẬT: Sử dụng DTO được làm giàu dữ liệu thay vì Entity thô
+            List<application.dto.AlertDashboardDTO> flaggedReviews = reviewService.getFlaggedReviewsForDashboard();
+
+            // Truyền DTO sang giao diện
             request.setAttribute("FLAGGED_REVIEWS", flaggedReviews);
 
-            // Forward tới giao diện Dashboard
             request.getRequestDispatcher("/views/moderation/dashboard.jsp").forward(request, response);
         } catch (Exception e) {
             request.setAttribute("ERROR", "Lỗi tải dữ liệu kiểm duyệt: " + e.getMessage());

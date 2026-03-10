@@ -27,4 +27,6 @@ public interface IReviewRepository {
     List<Review> getRecentReviewsByMerchant(String merchantId, int limit);
 
     int countRecentReviewsByUser(String userId, int hours);
+    
+    List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts();
 }

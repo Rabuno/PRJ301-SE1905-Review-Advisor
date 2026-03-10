@@ -123,4 +123,9 @@ public class ReviewService {
     public List<Review> getRecentMerchantReviews(String merchantId, int limit) {
         return reviewRepository.getRecentReviewsByMerchant(merchantId, limit);
     }
+
+    // Bổ sung luồng gọi DTO phục vụ Moderator Dashboard
+    public List<application.dto.AlertDashboardDTO> getFlaggedReviewsForDashboard() {
+        return reviewRepository.getFlaggedReviewsWithAlerts();
+    }
 }
