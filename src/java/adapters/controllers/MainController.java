@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "MainController", urlPatterns = {"/MainController"})
+@WebServlet(name = "MainController", urlPatterns = { "/MainController" })
 public class MainController extends HttpServlet {
 
     private ProductService productService;
