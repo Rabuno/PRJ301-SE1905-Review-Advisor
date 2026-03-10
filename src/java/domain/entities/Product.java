@@ -1,14 +1,15 @@
 package domain.entities;
 
-import domain.enums.Status;
+import domain.enums.ProductStatus;
 
 public class Product {
+
     private String productId;
     private String name;
     private String category;
     private String description;
     private double price;
-    private Status status;
+    private ProductStatus status;
     private String merchantId;
     private String imageUrl;
 
@@ -19,7 +20,7 @@ public class Product {
         this.category = category;
         this.description = description;
         this.price = price;
-        this.status = Status.PENDING;
+        this.status = ProductStatus.PENDING;
         this.merchantId = merchantId;
         this.imageUrl = imageUrl;
     }
@@ -48,11 +49,11 @@ public class Product {
         this.category = category;
     }
 
-    public Status getStatus() {
+    public ProductStatus getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(ProductStatus status) {
         this.status = status;
     }
 

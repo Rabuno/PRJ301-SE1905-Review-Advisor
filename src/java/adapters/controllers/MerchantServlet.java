@@ -1,20 +1,10 @@
 package adapters.controllers;
 
 import application.dto.MerchantStatsDTO;
-import application.ports.IAlertRepository;
-import application.ports.IReviewRepository;
-import application.ports.IUserRepository;
 import application.services.ProductService;
 import application.services.ReviewService;
-import application.services.TriageService;
 import domain.entities.Review;
 import domain.entities.User;
-import infrastructure.ai.WekaProvider;
-import infrastructure.persistence.SqlAlertDAO;
-import infrastructure.persistence.SqlProductDAO;
-import application.ports.IProductRepository;
-import infrastructure.persistence.SqlReviewDAO;
-import infrastructure.persistence.SqlUserDAO;
 
 import java.io.IOException;
 import java.util.List;

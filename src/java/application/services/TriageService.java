@@ -2,7 +2,7 @@ package application.services;
 
 import domain.entities.Review;
 import domain.entities.Alert;
-import domain.enums.Status;
+import domain.enums.ReviewStatus;
 import infrastructure.ai.WekaProvider;
 import java.util.UUID;
 
@@ -25,7 +25,7 @@ public class TriageService {
             double riskScore = wekaProvider.calculateRiskScore(review.getContent(), review.getRating(), accountAgeDays);
 
             if (riskScore >= RISK_THRESHOLD) {
-                review.setStatus(Status.FLAGGED);
+                review.setStatus(ReviewStatus.FLAGGED);
 
                 Alert alert = new Alert();
                 alert.setAlertId("ALT-" + UUID.randomUUID().toString().substring(0, 8));
@@ -38,13 +38,13 @@ public class TriageService {
 
                 return alert;
             } else {
-                review.setStatus(Status.PUBLISHED);
+                review.setStatus(ReviewStatus.PUBLISHED);
                 return null;
             }
         } catch (Exception e) {
             System.err.println("Weka Exception In TriageService: " + e.getMessage());
             e.printStackTrace();
-            review.setStatus(Status.PENDING);
+            review.setStatus(ReviewStatus.PENDING);
             return null;
         }
     }

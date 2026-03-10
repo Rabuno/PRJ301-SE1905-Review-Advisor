@@ -13,7 +13,9 @@ public class SqlProductDAO implements IProductRepository {
     @Override
     public List<Product> findAll() {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT product_id, name, description, price, merchant_id FROM Products";
+        String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
+                + " FROM Products"
+                + " Where status != 'DEACTIVATED'";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -24,7 +26,7 @@ public class SqlProductDAO implements IProductRepository {
                         rs.getString("description"),
                         rs.getDouble("price"),
                         rs.getString("merchant_id"),
-                        "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop"); // Default
+                        rs.getString("image_url"));
                 // image
                 // for UI
                 list.add(p);
@@ -53,7 +55,7 @@ public class SqlProductDAO implements IProductRepository {
 
     @Override
     public Product findById(String productId) {
-        String sql = "SELECT product_id, name, description, price, merchant_id FROM Products WHERE product_id = ?";
+        String sql = "SELECT product_id, name, category, description, price, merchant_id FROM Products WHERE product_id = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, productId);

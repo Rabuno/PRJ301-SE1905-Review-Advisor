@@ -1,14 +1,14 @@
 package application.ports;
 
 import domain.entities.Review;
-import domain.enums.Status;
+import domain.enums.ReviewStatus;
 import java.util.List;
 
 public interface IReviewRepository {
 
     boolean save(Review review);
 
-    void updateStatus(String reviewId, Status newStatus);
+    void updateStatus(String reviewId, ReviewStatus newStatus);
 
     Review findById(String reviewId);
 
@@ -16,7 +16,7 @@ public interface IReviewRepository {
 
     List<Review> getReviewHistory(String reviewId);
 
-    List<Review> findByStatus(Status status);
+    List<Review> findByStatus(ReviewStatus status);
 
     List<Review> findByProductId(String productId);
 

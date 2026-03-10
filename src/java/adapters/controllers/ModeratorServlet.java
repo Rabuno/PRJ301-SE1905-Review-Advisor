@@ -1,11 +1,9 @@
 package adapters.controllers;
 
-import application.ports.IAlertRepository;
 import application.services.ReviewService;
 import domain.entities.Review;
 import domain.entities.User;
-import domain.enums.Status;
-import infrastructure.persistence.SqlAlertDAO;
+import domain.enums.ReviewStatus;
 
 import java.io.IOException;
 import java.util.List;
@@ -76,10 +74,10 @@ public class ModeratorServlet extends HttpServlet {
 
         try {
             if ("APPROVE".equalsIgnoreCase(action)) {
-                reviewService.moderateReview(reviewId, Status.PUBLISHED);
+                reviewService.moderateReview(reviewId, ReviewStatus.PUBLISHED);
                 request.getSession().setAttribute("SUCCESS_MSG", "Đã phê duyệt đánh giá " + reviewId);
             } else if ("REJECT".equalsIgnoreCase(action)) {
-                reviewService.moderateReview(reviewId, Status.HIDDEN);
+                reviewService.moderateReview(reviewId, ReviewStatus.HIDDEN);
                 request.getSession().setAttribute("SUCCESS_MSG", "Đã gỡ bỏ đánh giá " + reviewId);
             }
 
