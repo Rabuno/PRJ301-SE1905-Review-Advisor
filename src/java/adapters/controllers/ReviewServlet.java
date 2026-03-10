@@ -1,6 +1,7 @@
 package adapters.controllers;
 
 import application.ports.IAlertRepository;
+import application.ports.IFileStoragePort;
 import application.ports.IReviewRepository;
 import application.ports.IUserRepository;
 import application.services.ReviewService;
@@ -12,16 +13,25 @@ import infrastructure.ai.WekaProvider;
 import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlReviewDAO;
 import infrastructure.persistence.SqlUserDAO;
+import infrastructure.storage.LocalFileStorageAdapter;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
+import javax.servlet.annotation.MultipartConfig;
 
-@WebServlet(name = "ReviewServlet", urlPatterns = {"/ReviewServlet"})
+@MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2MB
+        maxFileSize = 1024 * 1024 * 10, // 10MB
+        maxRequestSize = 1024 * 1024 * 50 // 50MB
+)
+@WebServlet(name = "ReviewServlet", urlPatterns = { "/ReviewServlet" })
 public class ReviewServlet extends BaseServlet {
 
     private ReviewService reviewService;
@@ -31,16 +41,17 @@ public class ReviewServlet extends BaseServlet {
         try {
             IReviewRepository reviewDAO = new SqlReviewDAO();
             IUserRepository userDAO = new SqlUserDAO();
+            
+            // ĐIỂM CẬP NHẬT 1: Chuyển đổi thư mục lưu trữ ra khỏi vùng cấm /WEB-INF
+            // Khởi tạo đường dẫn động tới thư mục /assets/uploads thuộc Web Root
+            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
+            IFileStoragePort storagePort = new LocalFileStorageAdapter(uploadDirPath);
 
-            // 1. KỸ THUẬT MOCKING: Giả lập AlertDAO tạm thời để code không báo đỏ chờ DB
-            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
-
-            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            IAlertRepository alertDAO = new SqlAlertDAO(); 
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
             TriageService triageService = new TriageService(new WekaProvider(modelPath));
 
-            // 3. Khởi tạo ReviewService chính thức (Gán vào biến instance)
-            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,9 +62,40 @@ public class ReviewServlet extends BaseServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // ... (Nội dung của doGet được giữ nguyên vẹn) ...
         String action = request.getParameter("action");
         if ("write".equals(action)) {
             forwardToView(request, response, "/views/customer/write-review.jsp");
+        } else if ("edit".equals(action)) {
+            String reviewId = request.getParameter("reviewId");
+            Review existingReview = reviewService.getReviewById(reviewId);
+            if (existingReview != null) {
+                request.setAttribute("REVIEW", existingReview);
+                forwardToView(request, response, "/views/customer/write-review.jsp");
+            } else {
+                request.setAttribute("ERROR", "Review not found!");
+                redirect(request, response, "/MainController?action=MyReviews");
+            }
+        } else if ("delete".equals(action)) {
+            try {
+                String reviewId = request.getParameter("reviewId");
+                String productId = request.getParameter("productId");
+                String source = request.getParameter("source"); 
+
+                reviewService.deleteReview(reviewId);
+                request.getSession().setAttribute("SUCCESS_MSG", "Đã xóa đánh giá thành công!");
+
+                if ("myreviews".equals(source)) {
+                    redirect(request, response, "/MainController?action=MyReviews");
+                } else if (productId != null && !productId.isEmpty()) {
+                    redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
+                } else {
+                    redirect(request, response, "/MainController");
+                }
+            } catch (Exception e) {
+                request.getSession().setAttribute("ERROR", "Lỗi khi xóa đánh giá: " + e.getMessage());
+                redirect(request, response, "/MainController?action=MyReviews");
+            }
         } else {
             forwardToView(request, response, "/views/customer/product-detail.jsp");
         }
@@ -75,18 +117,41 @@ public class ReviewServlet extends BaseServlet {
             if (content == null) {
                 content = request.getParameter("txtContent");
             }
-
             int rating = Integer.parseInt(request.getParameter("rating"));
 
-            String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            // ĐIỂM CẬP NHẬT 2: Trích xuất giao diện nhị phân Part (Binary Extraction)
+            Part filePart = request.getPart("evidenceImage"); 
+            InputStream imageStream = null;
+            String extension = "";
 
-            Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
+            if (filePart != null && filePart.getSize() > 0) {
+                imageStream = filePart.getInputStream();
+                String fileName = filePart.getSubmittedFileName();
+                if (fileName != null && fileName.lastIndexOf(".") != -1) {
+                    extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+                }
+            }
 
-            // 4. SỬA CHỮ KÝ HÀM: Truyền thêm username để AI tính toán Account Age
-            reviewService.submitReview(newReview, currentUser.getUsername());
+            String action = request.getParameter("action");
+            if ("update".equals(action)) {
+                String existingReviewId = request.getParameter("reviewId");
+                Review updatedReview = new Review(existingReviewId, productId, currentUser.getUserId(), content, rating);
+                
+                // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
+                reviewService.submitReview(updatedReview, currentUser.getUsername(), imageStream, extension); 
 
-            request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
-            redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
+                request.getSession().setAttribute("SUCCESS_MSG", "Đánh giá của bạn đã được cập nhật thành công!");
+                redirect(request, response, "/MainController?action=MyReviews");
+            } else {
+                String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
+                
+                // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
+                reviewService.submitReview(newReview, currentUser.getUsername(), imageStream, extension);
+
+                request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
+                redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
+            }
 
         } catch (Exception e) {
             request.setAttribute("ERROR", "Lỗi gửi đánh giá: " + e.getMessage());

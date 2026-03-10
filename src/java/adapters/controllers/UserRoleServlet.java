@@ -41,7 +41,7 @@ public class UserRoleServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!user.getUsername().equals("admin") && !user.hasPermission("PERM_AI_RETRAIN")) {
+        if (!user.getRoleId().equals("5") && !user.hasPermission("PERM_AI_RETRAIN")) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }
@@ -67,7 +67,7 @@ public class UserRoleServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!user.getUsername().equals("admin") && !user.hasPermission("PERM_AI_RETRAIN")) {
+        if (!user.getRoleId().equals("5") && !user.hasPermission("PERM_AI_RETRAIN")) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }

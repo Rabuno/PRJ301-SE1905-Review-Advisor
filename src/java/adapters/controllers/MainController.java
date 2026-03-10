@@ -13,6 +13,7 @@ import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlProductDAO;
 import infrastructure.persistence.SqlReviewDAO;
 import infrastructure.persistence.SqlUserDAO;
+import infrastructure.storage.LocalFileStorageAdapter;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,6 +22,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 @WebServlet(name = "MainController", urlPatterns = { "/MainController" })
 public class MainController extends HttpServlet {
@@ -33,20 +35,23 @@ public class MainController extends HttpServlet {
         try {
             IReviewRepository reviewDAO = new SqlReviewDAO();
             IUserRepository userDAO = new SqlUserDAO();
+            IAlertRepository alertDAO = new SqlAlertDAO();
+            IProductRepository productDAO = new SqlProductDAO();
 
-            // 1. KỸ THUẬT MOCKING: Giả lập AlertDAO tạm thời để code không báo đỏ chờ DB
-            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+            // ĐIỂM CẬP NHẬT: Khởi tạo IFileStoragePort để khớp với ReviewService mới
+            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
+            IFileStoragePort storagePort = new LocalFileStorageAdapter(uploadDirPath);
 
-            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            // Định vị tệp Model Weka
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
             TriageService triageService = new TriageService(new WekaProvider(modelPath));
 
-            // 3. Khởi tạo ReviewService chính thức (Gán vào biến instance)
-            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+            // Bổ sung tham số storagePort vào Constructor
+            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
+            this.productService = new ProductService(productDAO);
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new ServletException("Lỗi khởi tạo ReviewServlet do Weka Model: " + e.getMessage());
+            throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());
         }
     }
 
@@ -69,6 +74,16 @@ public class MainController extends HttpServlet {
                 } else {
                     request.setAttribute("ERROR", "Product not found!");
                     request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
+                }
+            } else if ("MyReviews".equals(action)) {
+                HttpSession session = request.getSession();
+                User user = (User) session.getAttribute("USER");
+                if (user != null) {
+                    List<Review> myReviews = reviewService.getReviewsByUser(user.getUserId());
+                    request.setAttribute("MY_REVIEWS", myReviews);
+                    request.getRequestDispatcher("/views/customer/my-reviews.jsp").forward(request, response);
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/login.jsp");
                 }
             } else {
                 // Default action: Lấy dữ liệu danh sách sản phẩm

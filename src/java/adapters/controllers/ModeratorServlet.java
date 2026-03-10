@@ -1,13 +1,9 @@
 package adapters.controllers;
 
-import application.ports.IAlertRepository;
 import application.services.ReviewService;
 import domain.entities.Review;
 import domain.entities.User;
 import domain.enums.ReviewStatus;
-import infrastructure.ai.WekaProvider;
-import infrastructure.persistence.SqlAlertDAO;
-import infrastructure.persistence.SqlReviewDAO;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,16 +24,18 @@ public class ModeratorServlet extends HttpServlet {
         try {
             application.ports.IReviewRepository reviewDAO = new infrastructure.persistence.SqlReviewDAO();
             application.ports.IUserRepository userDAO = new infrastructure.persistence.SqlUserDAO();
+            application.ports.IAlertRepository alertDAO = new infrastructure.persistence.SqlAlertDAO();
 
-            // Dummy AlertDAO cho đến khi có DB thật
-            IAlertRepository alertDAO = new SqlAlertDAO(); // Khởi tạo kết nối SQL Server thật
+            // ĐIỂM CẬP NHẬT: Khởi tạo IFileStoragePort để khớp với ReviewService mới
+            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
+            application.ports.IFileStoragePort storagePort = new infrastructure.storage.LocalFileStorageAdapter(uploadDirPath);
 
-            // 2. Định vị tệp Model Weka tự động trên Tomcat (Đã bỏ chữ /classes/)
+            // Định vị tệp Model Weka
             String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
             application.services.TriageService triageService = new application.services.TriageService(new infrastructure.ai.WekaProvider(modelPath));
 
-            // Khởi tạo thành công
-            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService);
+            // Bổ sung tham số storagePort vào Constructor
+            this.reviewService = new application.services.ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
 
         } catch (Exception e) {
             throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());
@@ -48,11 +46,12 @@ public class ModeratorServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            // Lấy danh sách các đánh giá đang bị giam (FLAGGED)
-            List<Review> flaggedReviews = reviewService.getFlaggedReviews();
+            // CẬP NHẬT: Sử dụng DTO được làm giàu dữ liệu thay vì Entity thô
+            List<application.dto.AlertDashboardDTO> flaggedReviews = reviewService.getFlaggedReviewsForDashboard();
+
+            // Truyền DTO sang giao diện
             request.setAttribute("FLAGGED_REVIEWS", flaggedReviews);
 
-            // Forward tới giao diện Dashboard
             request.getRequestDispatcher("/views/moderation/dashboard.jsp").forward(request, response);
         } catch (Exception e) {
             request.setAttribute("ERROR", "Lỗi tải dữ liệu kiểm duyệt: " + e.getMessage());

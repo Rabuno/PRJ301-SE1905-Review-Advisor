@@ -53,7 +53,7 @@
                                             <td class="text-warning">${r.rating} ★</td>
                                             <td class="small">${r.createdAt}</td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-info text-white me-1 fw-bold" data-bs-toggle="modal" data-bs-target="#evidenceModal" title="Drill-down Evidence">
+                                                <button type="button" class="btn btn-sm btn-info text-white me-1 fw-bold" data-bs-toggle="modal" data-bs-target="#evidenceModal_${r.reviewId}" title="Drill-down Evidence">
                                                     <i class="bi bi-search"></i> Evidence
                                                 </button>
                                                 
@@ -70,7 +70,81 @@
                                                 </form>
                                             </td>
                                         </tr>
-                                    </c:forEach>
+
+                                        <div class="modal fade" id="evidenceModal_${r.reviewId}" tabindex="-1" aria-labelledby="evidenceModalLabel_${r.reviewId}" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-dark text-white">
+                                                        <h5 class="modal-title fw-bold" id="evidenceModalLabel_${r.reviewId}">
+                                                            <i class="bi bi-shield-exclamation text-warning"></i> XAI Evidence Pack - Alert Details #${r.reviewId}
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4 text-start">
+                                                        <div class="row">
+                                                            <div class="col-md-6 border-end">
+                                                                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-database-check"></i> 1. System & Audit Evidence</h6>
+                                                                <ul class="list-group list-group-flush small">
+                                                                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                                                        Burst Score (Reviews/30m)
+                                                                        <span class="badge bg-danger rounded-pill">${not empty r.evidence.burstScore ? r.evidence.burstScore : 'High'}</span>
+                                                                    </li>
+                                                                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                                                        Text Similarity (Duplicate)
+                                                                        <span class="badge bg-warning text-dark rounded-pill">${not empty r.evidence.similarity ? r.evidence.similarity : 'N/A'}</span>
+                                                                    </li>
+                                                                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                                                        Account Age
+                                                                        <span class="badge bg-secondary rounded-pill">${not empty r.evidence.accountAge ? r.evidence.accountAge : 'Unknown'}</span>
+                                                                    </li>
+                                                                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                                                        Edit History
+                                                                        <span class="badge bg-secondary rounded-pill">${not empty r.evidence.editCount ? r.evidence.editCount : '0'} Edits</span>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                            
+                                                            <div class="col-md-6 ps-4">
+                                                                <h6 class="fw-bold text-warning mb-3"><i class="bi bi-robot"></i> 2. AI Model Features (Top-K)</h6>
+                                                                <p class="small text-muted mb-3">The Machine Learning model identified these top contributors to the spam classification:</p>
+                                                                
+                                                                <div class="mb-3">
+                                                                    <div class="d-flex justify-content-between small mb-1 fw-bold">
+                                                                        <span>${not empty r.aiFeatures[0].name ? r.aiFeatures[0].name : 'Primary AI Factor'}</span>
+                                                                        <span class="text-danger">${not empty r.aiFeatures[0].score ? r.aiFeatures[0].score : '80'}%</span>
+                                                                    </div>
+                                                                    <div class="progress" style="height: 8px;">
+                                                                        <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: ${not empty r.aiFeatures[0].score ? r.aiFeatures[0].score : '80'}%;"></div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div class="mb-3">
+                                                                    <div class="d-flex justify-content-between small mb-1 fw-bold">
+                                                                        <span>${not empty r.aiFeatures[1].name ? r.aiFeatures[1].name : 'Secondary AI Factor'}</span>
+                                                                        <span class="text-warning text-dark">${not empty r.aiFeatures[1].score ? r.aiFeatures[1].score : '60'}%</span>
+                                                                    </div>
+                                                                    <div class="progress" style="height: 8px;">
+                                                                        <div class="progress-bar bg-warning" role="progressbar" style="width: ${not empty r.aiFeatures[1].score ? r.aiFeatures[1].score : '60'}%;"></div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer bg-light d-flex justify-content-between">
+                                                        <span class="text-muted small">Overall Risk Score: <strong class="text-danger fs-6">${not empty r.riskScore ? r.riskScore : '0.90'} (Critical)</strong></span>
+                                                        <div>
+                                                            <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Close</button>
+                                                            <form action="${pageContext.request.contextPath}/ModeratorServlet" method="POST" class="d-inline">
+                                                                <input type="hidden" name="reviewId" value="${r.reviewId}">
+                                                                <input type="hidden" name="action" value="REJECT">
+                                                                <button type="submit" class="btn btn-danger fw-bold"><i class="bi bi-slash-circle"></i> Confirm & Ban</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </c:forEach>
                                 </c:when>
                                 <c:otherwise>
                                     <tr>
@@ -84,86 +158,6 @@
                             </c:choose>
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="evidenceModal" tabindex="-1" aria-labelledby="evidenceModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title fw-bold" id="evidenceModalLabel">
-                        <i class="bi bi-shield-exclamation text-warning"></i> XAI Evidence Pack - Alert Details
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-md-6 border-end">
-                            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-database-check"></i> 1. System & Audit Evidence</h6>
-                            <ul class="list-group list-group-flush small">
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                    Burst Score (Reviews/30m)
-                                    <span class="badge bg-danger rounded-pill">High Risk (15)</span>
-                                </li>
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                    Text Similarity (Duplicate)
-                                    <span class="badge bg-warning text-dark rounded-pill">0.92</span>
-                                </li>
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                    Account Age
-                                    <span class="badge bg-danger rounded-pill">New (2 Hours)</span>
-                                </li>
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                    Edit History
-                                    <span class="badge bg-secondary rounded-pill">0 Edits</span>
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <div class="col-md-6 ps-4">
-                            <h6 class="fw-bold text-warning mb-3"><i class="bi bi-robot"></i> 2. AI Model Features (Top-K)</h6>
-                            <p class="small text-muted mb-3">The Machine Learning model identified these top contributors to the spam classification:</p>
-                            
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small mb-1 fw-bold">
-                                    <span>N-gram: "cheap price link"</span>
-                                    <span class="text-danger">85%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: 85%;"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small mb-1 fw-bold">
-                                    <span>Metadata: IP Blacklist</span>
-                                    <span class="text-warning text-dark">60%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 60%;"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small mb-1 fw-bold">
-                                    <span>LLM Pattern (AI Gen text)</span>
-                                    <span class="text-danger">75%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light d-flex justify-content-between">
-                    <span class="text-muted small">Overall Risk Score: <strong class="text-danger fs-6">0.92 (Critical)</strong></span>
-                    <div>
-                        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-danger fw-bold"><i class="bi bi-slash-circle"></i> Confirm & Ban User</button>
-                    </div>
                 </div>
             </div>
         </div>

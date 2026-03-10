@@ -46,22 +46,10 @@
                     <c:choose>
                         <c:when test="${empty requestScope.AUDIT_LIST}">
                             <tr>
-                                <td>101</td>
-                                <td>2026-03-03 10:00:00</td>
-                                <td>U005</td>
-                                <td><span class="badge bg-warning text-dark">UPDATE_REVIEW</span></td>
-                                <td class="small text-start">Changed rating from 1 to 5</td>
-                                <td class="font-monospace small text-muted">0000000000000000</td>
-                                <td class="font-monospace small text-primary">a1b2c3d4e5f6g7h8</td>
-                            </tr>
-                            <tr>
-                                <td>102</td>
-                                <td>2026-03-03 10:15:00</td>
-                                <td>M001 (Mod)</td>
-                                <td><span class="badge bg-danger">REJECT_REVIEW</span></td>
-                                <td class="small text-start">Deleted spam review #R992</td>
-                                <td class="font-monospace small text-muted">a1b2c3d4e5f6g7h8</td>
-                                <td class="font-monospace small text-primary">x9y8z7w6v5u4t3s2</td>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No audit logs available in the system yet.
+                                </td>
                             </tr>
                         </c:when>
                         <c:otherwise>

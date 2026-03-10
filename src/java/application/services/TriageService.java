@@ -42,6 +42,7 @@ public class TriageService {
                 return null;
             }
         } catch (Exception e) {
+            System.err.println("Weka Exception In TriageService: " + e.getMessage());
             e.printStackTrace();
             review.setStatus(ReviewStatus.PENDING);
             return null;
@@ -49,13 +50,15 @@ public class TriageService {
     }
 
     // Cập nhật hàm generateEvidencePack (Xóa Hardcode)
-    private void generateEvidencePack(Alert alert, Review review, double riskScore, double accountAgeDays, double burstRate) {
+    private void generateEvidencePack(Alert alert, Review review, double riskScore, double accountAgeDays,
+            double burstRate) {
         // Cập nhật hàm gọi để đồng bộ với giải thuật Ablation mới
-        java.util.List<java.util.Map.Entry<String, Double>> topFeatures
-                = wekaProvider.extractTopKRiskFeatures(review.getContent(), review.getRating(), accountAgeDays, riskScore, 3);
+        java.util.List<java.util.Map.Entry<String, Double>> topFeatures = wekaProvider
+                .extractTopKRiskFeatures(review.getContent(), review.getRating(), accountAgeDays, riskScore, 3);
 
         if (topFeatures.isEmpty()) {
-            alert.addReason(new Alert.AlertReason("general_semantic_anomaly", riskScore, "Cấu trúc ngữ pháp tổng thể bất thường"));
+            alert.addReason(new Alert.AlertReason("general_semantic_anomaly", riskScore,
+                    "Cấu trúc ngữ pháp tổng thể bất thường"));
         } else {
             for (java.util.Map.Entry<String, Double> feature : topFeatures) {
                 // Định dạng hiển thị % rõ ràng cho Moderator
@@ -63,8 +66,7 @@ public class TriageService {
                 alert.addReason(new Alert.AlertReason(
                         "keyword_trigger: " + feature.getKey(),
                         feature.getValue(),
-                        "Đóng góp " + percentage + "% vào quyết định rủi ro của AI."
-                ));
+                        "Đóng góp " + percentage + "% vào quyết định rủi ro của AI."));
             }
         }
 

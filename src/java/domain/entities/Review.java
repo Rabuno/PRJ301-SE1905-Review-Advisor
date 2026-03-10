@@ -11,6 +11,7 @@ public class Review {
     private String content;
     private int rating;
     private ReviewStatus status;
+    private String imageUrl;
     private LocalDateTime createdAt;
 
     // Constructor phục vụ việc tạo Review mới từ Customer
@@ -54,6 +55,14 @@ public class Review {
 
     public void setStatus(ReviewStatus status) {
         this.status = status;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public String getProductId() {

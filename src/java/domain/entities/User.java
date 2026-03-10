@@ -1,6 +1,6 @@
 package domain.entities;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class User {
@@ -11,7 +11,8 @@ public class User {
     private String roleId;
     private String role;
     private List<String> permissions;
-    private Date createdAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public User(String userId, String username, String password) {
         this.userId = userId;
@@ -71,11 +72,20 @@ public class User {
         return permissions != null && permissions.contains(permission);
     }
 
-    public Date getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
 }
