@@ -33,7 +33,7 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("USER", authenticatedUser);
 
             if (authenticatedUser.hasPermission("PERM_MODERATE_ACTION")) {
-                response.sendRedirect(request.getContextPath() + "/MainController");
+                response.sendRedirect(request.getContextPath() + "/ModeratorServlet");
             } else if ("MERCHANT".equals(authenticatedUser.getRole())) {
                 response.sendRedirect(request.getContextPath() + "/MerchantServlet");
             } else {
