@@ -1,6 +1,8 @@
 package adapters.controllers;
 
 import application.ports.IAlertRepository;
+import application.ports.IFileStoragePort;
+import application.ports.IProductRepository;
 import application.ports.IReviewRepository;
 import application.ports.IUserRepository;
 import application.services.ProductService;
@@ -8,6 +10,7 @@ import application.services.ReviewService;
 import application.services.TriageService;
 import domain.entities.Product;
 import domain.entities.Review;
+import domain.entities.User;
 import infrastructure.ai.WekaProvider;
 import infrastructure.persistence.SqlAlertDAO;
 import infrastructure.persistence.SqlProductDAO;
