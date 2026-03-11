@@ -13,6 +13,17 @@ public class LocalFileStorageAdapter implements IFileStoragePort {
     private final String uploadDirPath;
     private final String contextPath;
 
+    /**
+     * Constructor của leader — contextPath mặc định là rỗng (URL không có prefix)
+     */
+    public LocalFileStorageAdapter(String uploadDirPath) {
+        this(uploadDirPath, "");
+    }
+
+    /**
+     * Constructor mở rộng — nhận contextPath từ request để URL đúng với web app
+     * context
+     */
     public LocalFileStorageAdapter(String uploadDirPath, String contextPath) {
         this.uploadDirPath = uploadDirPath;
         this.contextPath = (contextPath != null) ? contextPath : "";
@@ -24,10 +35,10 @@ public class LocalFileStorageAdapter implements IFileStoragePort {
         String safeFileName = UUID.randomUUID().toString() + extension;
         String absolutePath = uploadDirPath + File.separator + safeFileName;
 
-        // Ghi file vat ly
+        // Ghi file vật lý
         Files.copy(fileStream, Paths.get(absolutePath), StandardCopyOption.REPLACE_EXISTING);
 
-        // Tra ve URI day du (context path + /assets/uploads/...) de luu vao DB
+        // Trả về URI tương đối cho DB (có contextPath nếu được cung cấp)
         return contextPath + "/assets/uploads/" + safeFileName;
     }
 }

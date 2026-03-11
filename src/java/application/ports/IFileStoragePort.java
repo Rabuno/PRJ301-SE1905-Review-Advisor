@@ -4,9 +4,9 @@ import java.io.InputStream;
 
 public interface IFileStoragePort {
     /**
-     * @param fileStream Luong du lieu nhi phan cua tep tin.
-     * @param extension  Phan mo rong goc (vi du: .jpg).
-     * @return Duong dan tuong doi (URL) de luu vao co so du lieu.
+     * @param fileStream Luồng dữ liệu nhị phân của tệp tin.
+     * @param extension Phần mở rộng gốc (ví dụ: .jpg).
+     * @return Đường dẫn tương đối (URL) để lưu vào cơ sở dữ liệu.
      */
     String saveFile(InputStream fileStream, String extension) throws Exception;
 }

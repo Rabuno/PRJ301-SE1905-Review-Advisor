@@ -2,7 +2,7 @@ package application.services;
 
 import domain.entities.Review;
 import domain.entities.Alert;
-import domain.entities.ReviewStatus;
+import domain.enums.ReviewStatus;
 import infrastructure.ai.WekaProvider;
 import java.util.UUID;
 

@@ -17,4 +17,10 @@ public interface IProductRepository {
     boolean update(Product product);
 
     int countByMerchantId(String merchantId);
+
+    List<Product> findByMerchantId(String merchantId);
+
+    boolean save(Product product);
+
+    boolean update(Product product);
 }

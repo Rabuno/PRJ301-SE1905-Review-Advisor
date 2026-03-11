@@ -12,7 +12,7 @@ public class ProductService {
     }
 
     public List<Product> getAllProducts() {
-        return productRepository.findAll(); // Có thể tích hợp thêm logic lọc, phân trang ở đây
+        return productRepository.findAll();
     }
 
     public Product getProductById(String productId) {
@@ -23,16 +23,12 @@ public class ProductService {
         return productRepository.countByMerchantId(merchantId);
     }
 
-    public boolean addProduct(Product product) {
-        return productRepository.save(product);
-    }
-
     public List<Product> getProductsByMerchant(String merchantId) {
         return productRepository.findByMerchantId(merchantId);
     }
 
-    public List<Product> getProductsByCategory(String category) {
-        return productRepository.findByCategory(category);
+    public boolean createProduct(Product product) {
+        return productRepository.save(product);
     }
 
     public boolean updateProduct(Product product) {

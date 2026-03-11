@@ -18,10 +18,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "RolePermissionServlet", urlPatterns = { "/Admin/RolePermissions" })
+@WebServlet(name = "RolePermissionServlet", urlPatterns = {"/Admin/RolePermissions"})
 public class RolePermissionServlet extends HttpServlet {
 
     private IRoleRepository roleRepository;
@@ -44,7 +42,7 @@ public class RolePermissionServlet extends HttpServlet {
 
         User user = (User) session.getAttribute("USER");
         if (!user.hasPermission("PERM_AI_RETRAIN") && !user.getUsername().equals("admin")) { // Assuming ADMIN has
-                                                                                             // specific access
+            // specific access
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }

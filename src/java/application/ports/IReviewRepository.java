@@ -1,7 +1,7 @@
 package application.ports;
 
 import domain.entities.Review;
-import domain.entities.ReviewStatus;
+import domain.enums.ReviewStatus;
 import java.util.List;
 
 public interface IReviewRepository {
@@ -27,4 +27,6 @@ public interface IReviewRepository {
     List<Review> getRecentReviewsByMerchant(String merchantId, int limit);
 
     int countRecentReviewsByUser(String userId, int hours);
+    
+    List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts();
 }
