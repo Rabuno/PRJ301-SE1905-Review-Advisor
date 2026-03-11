@@ -9,4 +9,10 @@ public interface IProductRepository {
     Product findById(String productId);
 
     int countByMerchantId(String merchantId);
+
+    List<Product> findByMerchantId(String merchantId);
+
+    boolean save(Product product);
+
+    boolean update(Product product);
 }

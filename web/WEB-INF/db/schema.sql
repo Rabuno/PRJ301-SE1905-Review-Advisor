@@ -1,6 +1,6 @@
 -- ==============================================================================
--- BẢN THIẾT KẾ CƠ SỞ DỮ LIỆU - DỰ ÁN REVIEW ADVISOR (VER 2.3 - TRIPADVISOR DOMAIN)
--- Cấu trúc: Tương thích ORM Product.java | Dữ liệu: Lĩnh vực Nhà hàng/Khách sạn
+-- BẢN THIẾT KẾ CƠ SỞ DỮ LIỆU - DỰ ÁN REVIEW ADVISOR (VER 2.4 - TRIPADVISOR DOMAIN)
+-- Cấu trúc: Đồng bộ hóa 1:1 với Product.java và Review.java
 -- ==============================================================================
 
 -- 1. XÓA BẢNG CŨ CÓ KIỂM SOÁT (DROP PHASE)
@@ -51,7 +51,7 @@ CREATE TABLE Users (
 CREATE TABLE Products (
     product_id VARCHAR(50) PRIMARY KEY, 
     name NVARCHAR(255) NOT NULL, 
-    category NVARCHAR(100), 
+    category NVARCHAR(100) DEFAULT 'Uncategorized', 
     description NVARCHAR(MAX), 
     price DECIMAL(18,2), 
     merchant_id VARCHAR(50) NOT NULL, 
@@ -67,6 +67,7 @@ CREATE TABLE Reviews (
     user_id VARCHAR(50) NOT NULL, 
     rating INT CHECK (rating >= 1 AND rating <= 5), 
     content NVARCHAR(MAX), 
+    image_url VARCHAR(255) NULL, 
     status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PUBLISHED', 'HIDDEN', 'FLAGGED', 'DELETED')), 
     created_at DATETIME DEFAULT GETDATE(), 
     updated_at DATETIME DEFAULT GETDATE(), 
@@ -146,7 +147,7 @@ INSERT INTO RolePerm (role_id, permission_id) SELECT r.role_id, p.permission_id 
 INSERT INTO RolePerm (role_id, permission_id) SELECT r.role_id, p.permission_id FROM Roles r, Permissions p WHERE r.role_name = 'MODERATOR' AND p.permission_code IN ('PERM_PRODUCT_READ', 'PERM_REVIEW_READ', 'PERM_ALERT_READ', 'PERM_MODERATE_ACTION');
 INSERT INTO RolePerm (role_id, permission_id) SELECT r.role_id, p.permission_id FROM Roles r, Permissions p WHERE r.role_name = 'ADMIN';
 
--- Dữ liệu người dùng (Hợp nhất hàm băm)
+-- Dữ liệu người dùng
 INSERT INTO Users (user_id, username, password, role_id, created_at) VALUES 
 ('U_ADMIN', 'admin', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'ADMIN'), GETDATE()), 
 ('U_MOD', 'moderator', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'MODERATOR'), GETDATE()), 
@@ -156,21 +157,21 @@ INSERT INTO Users (user_id, username, password, role_id, created_at) VALUES
 ('U_CUST2', 'seeding_bot_01', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'CUSTOMER'), DATEADD(day, -2, GETDATE())), 
 ('U_CUST3', 'hieu_foodie', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'CUSTOMER'), DATEADD(day, -120, GETDATE()));
 
--- Cơ sở dịch vụ (Products mapping to Properties)
+-- Cơ sở dịch vụ
 INSERT INTO Products (product_id, name, category, description, price, merchant_id, image_url, status) VALUES
-('P_PROP1', N'JW Marriott Hotel Hanoi', N'Accommodation', N'Khách sạn 5 sao sang trọng với thiết kế lấy cảm hứng từ con rồng huyền thoại.', 4500000, 'U_MERCH1', '/assets/img/marriott_hn.jpg', 'ACTIVE'),
-('P_PROP2', N'French Grill - JW Marriott', N'Dining', N'Nhà hàng Pháp cao cấp, phục vụ bò Wagyu và hải sản nhập khẩu.', 2000000, 'U_MERCH1', '/assets/img/french_grill.jpg', 'ACTIVE'),
-('P_PROP3', N'Pizza 4P''s Tràng Tiền', N'Dining', N'Pizza kiểu Nhật kết hợp Ý, nổi tiếng với phô mai Burrata tự làm.', 350000, 'U_MERCH2', '/assets/img/pizza_4ps.jpg', 'ACTIVE');
+('P_PROP1', N'JW Marriott Hotel Hanoi', N'Accommodation', N'Khách sạn 5 sao sang trọng với thiết kế lấy cảm hứng từ con rồng huyền thoại.', 4500000, 'U_MERCH1', '/assets/uploads/marriott_hn.jpg', 'ACTIVE'),
+('P_PROP2', N'French Grill - JW Marriott', N'Dining', N'Nhà hàng Pháp cao cấp, phục vụ bò Wagyu và hải sản nhập khẩu.', 2000000, 'U_MERCH1', '/assets/uploads/french_grill.jpg', 'ACTIVE'),
+('P_PROP3', N'Pizza 4P''s Tràng Tiền', N'Dining', N'Pizza kiểu Nhật kết hợp Ý, nổi tiếng với phô mai Burrata tự làm.', 350000, 'U_MERCH2', '/assets/uploads/pizza_4ps.jpg', 'ACTIVE');
 
--- Đánh giá (Reviews)
-INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) VALUES 
-('R_001', 'P_PROP1', 'U_CUST1', 5, N'Phòng ốc cực kỳ sạch sẽ và tiện nghi. Hồ bơi view kính rất đẹp. Sẽ quay lại!', 'PUBLISHED', DATEADD(day, -10, GETDATE())),
-('R_002', 'P_PROP1', 'U_CUST2', 1, N'Khách sạn thái độ phục vụ lồi lõm, có gián trong phòng. Nhận đặt phòng giá rẻ các ks 5 sao chiết khấu 40% qua Zalo 09xx.', 'FLAGGED', DATEADD(day, -1, GETDATE())),
-('R_003', 'P_PROP3', 'U_CUST3', 4, N'Pizza ngon, không gian ấm cúng nhưng phải đặt bàn trước khá lâu.', 'PUBLISHED', DATEADD(day, -5, GETDATE())),
-('R_004', 'P_PROP2', 'U_CUST2', 5, N'Tuyển CTV review nhà hàng/khách sạn, ngồi nhà lướt app kiếm 500k/ngày, cọc trước 100k.', 'FLAGGED', DATEADD(hour, -2, GETDATE())),
-('R_005', 'P_PROP1', 'U_CUST3', 3, N'Cách âm giữa các phòng chưa thực sự tốt, giá buffet sáng hơi cao.', 'HIDDEN', DATEADD(day, -20, GETDATE()));
+-- Đánh giá
+INSERT INTO Reviews (review_id, product_id, user_id, rating, content, image_url, status, created_at) VALUES 
+('R_001', 'P_PROP1', 'U_CUST1', 5, N'Phòng ốc cực kỳ sạch sẽ và tiện nghi. Hồ bơi view kính rất đẹp. Sẽ quay lại!', '/assets/uploads/r001_pool.jpg', 'PUBLISHED', DATEADD(day, -10, GETDATE())),
+('R_002', 'P_PROP1', 'U_CUST2', 1, N'Khách sạn thái độ phục vụ lồi lõm, có gián trong phòng. Nhận đặt phòng giá rẻ các ks 5 sao chiết khấu 40% qua Zalo 09xx.', NULL, 'FLAGGED', DATEADD(day, -1, GETDATE())),
+('R_003', 'P_PROP3', 'U_CUST3', 4, N'Pizza ngon, không gian ấm cúng nhưng phải đặt bàn trước khá lâu.', '/assets/uploads/r003_pizza.jpg', 'PUBLISHED', DATEADD(day, -5, GETDATE())),
+('R_004', 'P_PROP2', 'U_CUST2', 5, N'Tuyển CTV review nhà hàng/khách sạn, ngồi nhà lướt app kiếm 500k/ngày, cọc trước 100k.', NULL, 'FLAGGED', DATEADD(hour, -2, GETDATE())),
+('R_005', 'P_PROP1', 'U_CUST3', 3, N'Cách âm giữa các phòng chưa thực sự tốt, giá buffet sáng hơi cao.', NULL, 'HIDDEN', DATEADD(day, -20, GETDATE()));
 
--- Dữ liệu Cảnh báo XAI cho các đánh giá lưu trú/ẩm thực
+-- Cảnh báo XAI
 INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_001', 'R_002', 0.8950, 'OPEN');
 INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES 
 ('ALT_001', 'đặt phòng giá rẻ', 0.3840, N'Tín hiệu lừa đảo môi giới du lịch trái phép (38.4%).'),

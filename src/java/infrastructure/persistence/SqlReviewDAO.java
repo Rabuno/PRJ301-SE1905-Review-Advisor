@@ -17,9 +17,10 @@ public class SqlReviewDAO implements IReviewRepository {
         // Kiểm tra xem review đã tồn tại chưa (Edit mode)
         boolean isUpdate = false;
         String checkSql = "SELECT 1 FROM Reviews WHERE review_id = ?";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
             checkPs.setString(1, review.getReviewId());
-            try ( ResultSet rs = checkPs.executeQuery()) {
+            try (ResultSet rs = checkPs.executeQuery()) {
                 if (rs.next()) {
                     isUpdate = true;
                 }
@@ -30,7 +31,8 @@ public class SqlReviewDAO implements IReviewRepository {
 
         if (isUpdate) {
             String updateSql = "UPDATE Reviews SET rating = ?, content = ?, status = ?, updated_at = GETDATE() WHERE review_id = ?";
-            try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(updateSql)) {
+            try (Connection conn = DBConnection.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setInt(1, review.getRating());
                 ps.setString(2, review.getContent());
                 ps.setString(3, review.getStatus().name());
@@ -45,7 +47,7 @@ public class SqlReviewDAO implements IReviewRepository {
         // Tạo mới (Write mode)
         String sql = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, review.getReviewId());
             ps.setString(2, review.getProductId());
@@ -76,7 +78,7 @@ public class SqlReviewDAO implements IReviewRepository {
                 PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, status.name());
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(
                             rs.getString("review_id"),
@@ -120,10 +122,10 @@ public class SqlReviewDAO implements IReviewRepository {
     @Override
     public Review findById(String reviewId) {
         String sql = "SELECT * FROM Reviews WHERE review_id = ?";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, reviewId);
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new Review(
                             rs.getString("review_id"),
@@ -158,10 +160,10 @@ public class SqlReviewDAO implements IReviewRepository {
                 + "WHERE JSON_VALUE(diff_json, '$.reviewId') = ? "
                 + "ORDER BY [timestamp] DESC";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, reviewId);
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String rId = rs.getString("review_id");
                     if (rId != null) {
@@ -214,62 +216,10 @@ public class SqlReviewDAO implements IReviewRepository {
     public List<Review> findByUserId(String userId) {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM Reviews WHERE user_id = ? AND status != 'HIDDEN' ORDER BY created_at DESC";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
-            try ( ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Review r = new Review(
-                            rs.getString("review_id"),
-                            rs.getString("product_id"),
-                            rs.getString("user_id"),
-                            rs.getString("content"),
-                            rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
-                            rs.getTimestamp("created_at").toLocalDateTime());
-                    list.add(r);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    @Override
-    public List<Review> findByUserId(String userId) {
-        List<Review> list = new ArrayList<>();
-        String sql = "SELECT * FROM Reviews WHERE user_id = ? AND status != 'HIDDEN' ORDER BY created_at DESC";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, userId);
-            try ( ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Review r = new Review(
-                            rs.getString("review_id"),
-                            rs.getString("product_id"),
-                            rs.getString("user_id"),
-                            rs.getString("content"),
-                            rs.getInt("rating"),
-                            ReviewStatus.valueOf(rs.getString("status")),
-                            rs.getTimestamp("created_at").toLocalDateTime());
-                    list.add(r);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    @Override
-    public List<Review> findByUserId(String userId) {
-        List<Review> list = new ArrayList<>();
-        String sql = "SELECT * FROM Reviews WHERE user_id = ? AND status != 'HIDDEN' ORDER BY created_at DESC";
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, userId);
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(
                             rs.getString("review_id"),
@@ -356,12 +306,13 @@ public class SqlReviewDAO implements IReviewRepository {
         String sql = "SELECT COUNT(*) AS total_reviews FROM Reviews "
                 + "WHERE user_id = ? AND created_at >= DATEADD(hour, -?, GETDATE())";
 
-        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (java.sql.Connection conn = DBConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
             ps.setInt(2, hours);
 
-            try ( java.sql.ResultSet rs = ps.executeQuery()) {
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     count = rs.getInt("total_reviews");
                 }
@@ -384,7 +335,9 @@ public class SqlReviewDAO implements IReviewRepository {
                 + "LEFT JOIN Alerts a ON r.review_id = a.review_id "
                 + "WHERE r.status = 'FLAGGED' ORDER BY r.created_at DESC";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 application.dto.AlertDashboardDTO dto = new application.dto.AlertDashboardDTO();
@@ -413,17 +366,18 @@ public class SqlReviewDAO implements IReviewRepository {
         return list;
     }
 
-// Hàm phụ trợ 1: Ánh xạ cấu trúc AlertEvidences
-    private java.util.Map<String, Object> getEvidencesForReview(String reviewId, Connection conn) throws java.sql.SQLException {
+    // Hàm phụ trợ 1: Ánh xạ cấu trúc AlertEvidences
+    private java.util.Map<String, Object> getEvidencesForReview(String reviewId, Connection conn)
+            throws java.sql.SQLException {
         java.util.Map<String, Object> evidenceMap = new java.util.HashMap<>();
         String sql = "SELECT ae.rule_type, ae.measured_value "
                 + "FROM AlertEvidences ae "
                 + "JOIN Alerts a ON ae.alert_id = a.alert_id "
                 + "WHERE a.review_id = ?";
 
-        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, reviewId);
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String ruleType = rs.getString("rule_type");
                     double value = rs.getDouble("measured_value");
@@ -442,8 +396,9 @@ public class SqlReviewDAO implements IReviewRepository {
         return evidenceMap;
     }
 
-// Hàm phụ trợ 2: Ánh xạ cấu trúc AlertReasons
-    private List<application.dto.AlertDashboardDTO.AIFeatureDTO> getReasonsForReview(String reviewId, Connection conn) throws java.sql.SQLException {
+    // Hàm phụ trợ 2: Ánh xạ cấu trúc AlertReasons
+    private List<application.dto.AlertDashboardDTO.AIFeatureDTO> getReasonsForReview(String reviewId, Connection conn)
+            throws java.sql.SQLException {
         List<application.dto.AlertDashboardDTO.AIFeatureDTO> features = new ArrayList<>();
         String sql = "SELECT ar.feature_name, ar.importance_weight "
                 + "FROM AlertReasons ar "
@@ -451,9 +406,9 @@ public class SqlReviewDAO implements IReviewRepository {
                 + "WHERE a.review_id = ? "
                 + "ORDER BY ar.importance_weight DESC"; // Đẩy Feature quan trọng nhất lên đầu (Top-K)
 
-        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, reviewId);
-            try ( ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String featureName = rs.getString("feature_name");
                     double weight = rs.getDouble("importance_weight");
