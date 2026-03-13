@@ -32,7 +32,7 @@ public class ReviewService {
         this.storagePort = storagePort;
     }
 
-    public boolean submitReview(Review review, String username, InputStream imageStream, String extension) throws Exception {
+    public boolean submitReview(Review review, User user, InputStream imageStream, String extension) throws Exception {
         // 1. Xử lý lưu trữ tệp tin (I/O Operation) trước khi can thiệp cơ sở dữ liệu
         if (imageStream != null && extension != null && !extension.isEmpty()) {
             String imageUrl = storagePort.saveFile(imageStream, extension);
@@ -40,12 +40,12 @@ public class ReviewService {
         }
 
         // 2. Chuyển giao thực thể đã được làm giàu (enriched entity) cho luồng xử lý lõi
-        return submitReviewAI(review, username);
+        return submitReviewAI(review, user);
     }
 
-    private boolean submitReviewAI(Review review, String username) {
+    private boolean submitReviewAI(Review review, User user) {
         // 1. Thu thập Siêu dữ liệu (Metadata) cho Mô hình Đa biến
-        double accountAgeDays = calculateAccountAge(username);
+        double accountAgeDays = calculateAccountAge(user);
         // Giả sử đếm số review trong 1 giờ qua để tính Burst Rate
         double burstRate = (double) reviewRepository.countRecentReviewsByUser(review.getUserId(), 1);
 
@@ -68,8 +68,7 @@ public class ReviewService {
     }
 
     // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ---
-    private double calculateAccountAge(String username) {
-        User user = userRepository.findByUsername(username);
+    private double calculateAccountAge(User user) {
 
         if (user != null && user.getCreatedAt() != null) {
             // Trích xuất phần ngày (LocalDate) từ LocalDateTime để đối chiếu với LocalDate.now()

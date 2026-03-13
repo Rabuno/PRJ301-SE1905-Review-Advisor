@@ -29,12 +29,13 @@ public class SqlReviewDAO implements IReviewRepository {
         }
 
         if (isUpdate) {
-            String updateSql = "UPDATE Reviews SET rating = ?, content = ?, status = ?, updated_at = GETDATE() WHERE review_id = ?";
+            String updateSql = "UPDATE Reviews SET rating=?, content=?, status=?, image_url=?, updated_at=GETDATE() WHERE review_id=?";
             try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setInt(1, review.getRating());
                 ps.setString(2, review.getContent());
                 ps.setString(3, review.getStatus().name());
-                ps.setString(4, review.getReviewId());
+                ps.setString(4, review.getImageUrl());
+                ps.setString(5, review.getReviewId());
                 return ps.executeUpdate() > 0;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -43,8 +44,8 @@ public class SqlReviewDAO implements IReviewRepository {
         }
 
         // Tạo mới (Write mode)
-        String sql = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, image_url, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, review.getReviewId());
@@ -53,6 +54,7 @@ public class SqlReviewDAO implements IReviewRepository {
             ps.setInt(4, review.getRating());
             ps.setString(5, review.getContent());
             ps.setString(6, review.getStatus().name()); // Chuyển Enum thành chuỗi
+            ps.setString(7, review.getImageUrl());
 
             // Xử lý thời gian từ Java LocalDateTime sang SQL DATETIME
             Timestamp timestamp = (review.getCreatedAt() != null)

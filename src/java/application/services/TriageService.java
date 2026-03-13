@@ -39,8 +39,6 @@ public class TriageService {
 
                 // Truyền toàn bộ đối tượng review vào để trích xuất văn bản
                 generateEvidencePack(alert, review, riskScore, accountAgeDays, burstRate);
-                
-                alertRepository.saveAlert(alert);
 
                 return alert;
             } else {

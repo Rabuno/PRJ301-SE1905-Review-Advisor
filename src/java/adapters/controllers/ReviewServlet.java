@@ -124,7 +124,7 @@ public class ReviewServlet extends BaseServlet {
                 Review updatedReview = new Review(existingReviewId, productId, currentUser.getUserId(), content, rating);
 
                 // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
-                reviewService.submitReview(updatedReview, currentUser.getUsername(), imageStream, extension);
+                reviewService.submitReview(updatedReview, currentUser, imageStream, extension);
 
                 request.getSession().setAttribute("SUCCESS_MSG", "Đánh giá của bạn đã được cập nhật thành công!");
                 redirect(request, response, "/MainController?action=MyReviews");
@@ -133,7 +133,7 @@ public class ReviewServlet extends BaseServlet {
                 Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
 
                 // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
-                reviewService.submitReview(newReview, currentUser.getUsername(), imageStream, extension);
+                reviewService.submitReview(newReview, currentUser, imageStream, extension);
 
                 request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
                 redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
