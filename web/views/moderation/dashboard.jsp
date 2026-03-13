@@ -161,25 +161,17 @@
                                                                                         </li>
                                                                                         <li
                                                                                             class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                                                                                    Text Similarity (Duplicate)
-                                                                                                    <c:choose>
-                                                                                                        <c:when test="${item.duplicateCount > 0}">
-                                                                                                            <span class="badge bg-danger rounded-pill">
-                                                                                                                ${item.duplicateCount} dup
-                                                                                                            </span>
-                                                                                                        </c:when>
-                                                                                                        <c:otherwise>
-                                                                                                            <span class="badge bg-success rounded-pill">Unique</span>
-                                                                                                        </c:otherwise>
-                                                                                                    </c:choose>
-                                                                                                </li>
-                                                                                                <li
-                                                                                                    class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                                                                                    Edit History
-                                                                                                    <span class="badge bg-secondary rounded-pill">
-                                                                                                        ${item.editCount} Edits
-                                                                                                    </span>
-                                                                                                </li>
+                                                                                            Text Similarity (Duplicate)
+                                                                                            <span
+                                                                                                class="badge bg-secondary rounded-pill">N/A</span>
+                                                                                        </li>
+                                                                                        <li
+                                                                                            class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                                                                            Edit History
+                                                                                            <span
+                                                                                                class="badge bg-secondary rounded-pill">0
+                                                                                                Edits</span>
+                                                                                        </li>
                                                                                     </ul>
                                                                                 </div>
 

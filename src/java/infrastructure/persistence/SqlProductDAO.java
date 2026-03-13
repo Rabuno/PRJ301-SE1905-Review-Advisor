@@ -252,24 +252,14 @@ public class SqlProductDAO implements IProductRepository {
     
     public List<Product> findByCategory(String category) {
         List<Product> list = new ArrayList<>();
-        // Backward-compatible category matching: support older seed values (Accommodation/Dining/Attraction/Cafe).
-        String[] cats = normalizeCategories(category);
-        StringBuilder where = new StringBuilder();
-        for (int i = 0; i < cats.length; i++) {
-            if (i > 0) where.append(" OR ");
-            where.append("LOWER(category) = LOWER(?)");
-        }
-
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
                 + "FROM Products "
-                + "WHERE (" + where + ") "
+                + "WHERE LOWER(category) = LOWER(?) "
                 + "AND status = 'ACTIVE' "
                 + "ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (int i = 0; i < cats.length; i++) {
-                ps.setString(i + 1, cats[i]);
-            }
+            ps.setString(1, category);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Product p = mapRow(rs);
@@ -281,23 +271,5 @@ public class SqlProductDAO implements IProductRepository {
             e.printStackTrace();
         }
         return list;
-    }
-
-    private String[] normalizeCategories(String category) {
-        if (category == null) return new String[] { "" };
-        String c = category.trim();
-        if (c.equalsIgnoreCase("Hotels")) {
-            return new String[] {"Hotels", "Hotel", "Resort", "Accommodation"};
-        }
-        if (c.equalsIgnoreCase("Restaurants")) {
-            return new String[] {"Restaurants", "Restaurant", "Dining"};
-        }
-        if (c.equalsIgnoreCase("Attractions")) {
-            return new String[] {"Attractions", "Attraction"};
-        }
-        if (c.equalsIgnoreCase("Cafes")) {
-            return new String[] {"Cafes", "Cafe"};
-        }
-        return new String[] { c };
     }
 }

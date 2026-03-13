@@ -11,14 +11,10 @@ public class FlaggedReviewDTO {
 
     private final Review review;
     private final Alert alert; // Có thể null nếu Alert chưa được lưu DB
-    private final int duplicateCount;
-    private final int editCount;
 
-    public FlaggedReviewDTO(Review review, Alert alert, int duplicateCount, int editCount) {
+    public FlaggedReviewDTO(Review review, Alert alert) {
         this.review = review;
         this.alert = alert;
-        this.duplicateCount = Math.max(0, duplicateCount);
-        this.editCount = Math.max(0, editCount);
     }
 
     public Review getReview() {
@@ -27,14 +23,6 @@ public class FlaggedReviewDTO {
 
     public Alert getAlert() {
         return alert;
-    }
-
-    public int getDuplicateCount() {
-        return duplicateCount;
-    }
-
-    public int getEditCount() {
-        return editCount;
     }
 
     // Các helper method tiện lợi để dùng trong JSP (EL expression)
