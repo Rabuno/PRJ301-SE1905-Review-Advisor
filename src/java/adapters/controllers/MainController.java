@@ -8,7 +8,9 @@ import domain.entities.Review;
 import domain.entities.User;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -50,6 +52,7 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
                     request.setAttribute("REVIEWS", reviews);
                     request.setAttribute("TOTAL_REVIEWS", stats.getTotalReviews());
                     request.setAttribute("AVERAGE_RATING", stats.getAverageRatingFormatted());
+                    request.setAttribute("AVERAGE_RATING_RAW", stats.getAverageRating());
                     request.setAttribute("STAR_COUNTS", stats.getStarCounts());
                     forwardToView(request, response, "/views/customer/product-detail.jsp"); // Sử dụng hàm từ BaseServlet
                 } else {
@@ -76,15 +79,18 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
                     products = productService.getAllProducts();
                 }
                 request.setAttribute("PRODUCT_LIST", products);
+                addProductRatingsToRequest(request, products);
                 forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
             } else if ("search".equals(action)) {
                 String keyword = request.getParameter("txtSearch");
                 List<Product> searchResults = productService.searchProducts(keyword);
                 request.setAttribute("PRODUCT_LIST", searchResults);
+                addProductRatingsToRequest(request, searchResults);
                 forwardToView(request, response, "/views/customer/index.jsp");
             } else {
                 List<Product> products = productService.getAllProducts();
                 request.setAttribute("PRODUCT_LIST", products);
+                addProductRatingsToRequest(request, products);
                 forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
             }
 
@@ -93,5 +99,21 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
             request.setAttribute("ERROR", "Lỗi tải trang: " + e.getMessage());
             forwardToView(request, response, "/views/shared/error.jsp"); // Sử dụng hàm từ BaseServlet
         }
+    }
+
+    private void addProductRatingsToRequest(HttpServletRequest request, List<Product> products) {
+        // Map productId -> average rating (0.0 if no reviews)
+        Map<String, Double> avgRatings = new HashMap<>();
+        if (products != null) {
+            for (Product p : products) {
+                if (p == null || p.getProductId() == null) {
+                    continue;
+                }
+                List<Review> reviews = reviewService.getReviewsByProduct(p.getProductId());
+                ProductReviewStatsDTO stats = new ProductReviewStatsDTO(reviews);
+                avgRatings.put(p.getProductId(), stats.getAverageRating());
+            }
+        }
+        request.setAttribute("PRODUCT_AVG_RATINGS", avgRatings);
     }
 }

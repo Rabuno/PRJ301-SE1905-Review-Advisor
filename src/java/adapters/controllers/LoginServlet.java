@@ -9,7 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-@WebServlet(name = "LoginServlet", urlPatterns = { "/LoginServlet" })
+@WebServlet(name = "LoginServlet", urlPatterns = {"/LoginServlet"})
 public class LoginServlet extends HttpServlet {
 
     private AuthService authService;
@@ -39,10 +39,19 @@ public class LoginServlet extends HttpServlet {
             } else {
                 response.sendRedirect(request.getContextPath() + "/MainController");
             }
-
         } catch (Exception e) {
-            request.setAttribute("ERROR", e.getMessage());
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            e.printStackTrace(); // Ghi nhận log lỗi phía server để audit
+
+            // Kiểm tra trạng thái an toàn của Response trước khi thao tác
+            if (!response.isCommitted()) {
+                response.resetBuffer(); // Chỉ dọn dẹp bộ đệm dữ liệu (body), giữ nguyên header
+                request.setAttribute("ERROR", "Lỗi xác thực: " + e.getMessage());
+                request.getRequestDispatcher("login.jsp").forward(request, response);
+            } else {
+                // Luồng dữ liệu đã được ghi, không thể thực hiện forward.
+                // Bỏ qua việc can thiệp để bảo toàn luồng Chunked Encoding đang gửi.
+                getServletContext().log("Critical: Response already committed. Cannot forward exception: ", e);
+            }
         }
     }
 }

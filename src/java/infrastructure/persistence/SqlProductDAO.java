@@ -101,7 +101,25 @@ public class SqlProductDAO implements IProductRepository {
         }
         return null;
     }
-
+    
+    public List<Product> searchProducts(String keyword) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
+                + "FROM Products "
+                + "WHERE status != 'DEACTIVATED'"
+                + "AND ";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+    
     @Override
     public boolean save(Product product) {
         String sql = "INSERT INTO Products (product_id, name, category, description, price, merchant_id, image_url, status) "

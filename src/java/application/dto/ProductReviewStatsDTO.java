@@ -1,9 +1,11 @@
 package application.dto;
 
 import domain.entities.Review;
+import java.util.Locale;
 import java.util.List;
 
 public class ProductReviewStatsDTO {
+
     private int totalReviews;
     private double averageRating;
     private int[] starCounts;
@@ -26,7 +28,21 @@ public class ProductReviewStatsDTO {
         }
     }
 
-    public int getTotalReviews() { return totalReviews; }
-    public String getAverageRatingFormatted() { return String.format("%.1f", averageRating); }
-    public int[] getStarCounts() { return starCounts; }
+    public int getTotalReviews() {
+        return totalReviews;
+    }
+
+    public String getAverageRatingFormatted() {
+        // Keep decimal separator stable (.) regardless of server default locale.
+        return String.format(Locale.US, "%.1f", averageRating);
+    }
+
+    // Raw value is useful for rendering stars (comparisons) without string coercion.
+    public double getAverageRating() {
+        return averageRating;
+    }
+
+    public int[] getStarCounts() {
+        return starCounts;
+    }
 }

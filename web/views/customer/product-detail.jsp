@@ -77,7 +77,14 @@
 
             <div class="d-flex align-items-center mb-3">
                 <div class="ta-rating-stars me-2">
-                    <i class="bi bi-circle-fill"></i><i class="bi bi-circle-fill"></i><i class="bi bi-circle-fill"></i><i class="bi bi-circle-fill"></i><i class="bi bi-circle-half"></i>
+                    <c:set var="topRating" value="${empty AVERAGE_RATING_RAW ? 0 : AVERAGE_RATING_RAW}" />
+                    <c:forEach begin="1" end="5" var="i">
+                        <c:choose>
+                            <c:when test="${topRating >= i}"><i class="bi bi-star-fill"></i></c:when>
+                            <c:when test="${topRating >= i - 0.5}"><i class="bi bi-star-half"></i></c:when>
+                            <c:otherwise><i class="bi bi-star"></i></c:otherwise>
+                        </c:choose>
+                    </c:forEach>
                 </div>
                 <span class="text-muted text-decoration-underline me-3">${TOTAL_REVIEWS} Reviews</span>
                 <span class="badge bg-light text-dark border"><i class="bi bi-trophy text-warning"></i> Travelers' Choice 2024</span>
@@ -100,7 +107,7 @@
                              alt="Default Image" 
                              style="height: 220px; object-fit: cover;">
                     </c:otherwise>
-                </c:choose>F
+                </c:choose>
             </div>
 
             <div class="row">
@@ -115,32 +122,32 @@
                     <div class="row mb-5">
                         <div class="col-md-3 text-center">
                             <h1 class="display-3 fw-bold mb-0">${TOTAL_REVIEWS > 0 ? AVERAGE_RATING : '0.0'}</h1>
-                            <div class="col-md-3 text-center">
-                                <h1 class="display-3 fw-bold mb-0">${TOTAL_REVIEWS > 0 ? AVERAGE_RATING : '0.0'}</h1>
-                                <div class="ta-rating-stars mb-2">
-                                    <%-- Lấy giá trị rating hiện tại, nếu chưa có review thì mặc định là 0 --%>
-                                    <c:set var="currentRating" value="${TOTAL_REVIEWS > 0 ? AVERAGE_RATING : 0}" />
+                            <div class="ta-rating-stars mb-2">
 
-                                    <%-- Lặp 5 lần để in ra 5 biểu tượng --%>
-                                    <c:forEach var="i" begin="1" end="5">
-                                        <c:choose>
-                                            <%-- Nếu điểm lớn hơn hoặc bằng vị trí hiện tại -> Tròn đặc --%>
-                                            <c:when test="${currentRating >= i}">
-                                                <i class="bi bi-circle-fill text-success"></i>
-                                            </c:when>
-                                            <%-- Nếu điểm lớn hơn hoặc bằng vị trí hiện tại trừ 0.5 -> Tròn khuyết (ví dụ: 4.5) --%>
-                                            <c:when test="${currentRating >= (i - 0.5)}">
-                                                <i class="bi bi-circle-half text-success"></i>
-                                            </c:when>
-                                            <%-- Còn lại -> Tròn rỗng --%>
-                                            <c:otherwise>
-                                                <i class="bi bi-circle text-success"></i>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:forEach>
-                                </div>
-                                <p class="text-muted">${TOTAL_REVIEWS} reviews</p>
+                                <c:set var="rating" value="${TOTAL_REVIEWS > 0 ? AVERAGE_RATING_RAW : 0}" />
+
+                                <c:forEach begin="1" end="5" var="i">
+
+                                    <c:choose>
+
+                                        <c:when test="${rating >= i}">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        </c:when>
+
+                                        <c:when test="${rating >= i - 0.5}">
+                                            <i class="bi bi-star-half text-warning"></i>
+                                        </c:when>
+
+                                        <c:otherwise>
+                                            <i class="bi bi-star text-warning"></i>
+                                        </c:otherwise>
+
+                                    </c:choose>
+
+                                </c:forEach>
+
                             </div>
+                            <p class="text-muted">${TOTAL_REVIEWS} reviews</p>
                         </div>
                         <div class="col-md-9">
                             <div class="d-flex align-items-center mb-1">
@@ -204,8 +211,8 @@
                                                     <span class="ta-rating-stars me-2">
                                                         <c:forEach begin="1" end="5" var="i">
                                                             <c:choose>
-                                                                <c:when test="${i <= r.rating}"><i class="bi bi-circle-fill"></i></c:when>
-                                                                <c:otherwise><i class="bi bi-circle"></i></c:otherwise>
+                                                                <c:when test="${i <= r.rating}"><i class="bi bi-star-fill"></i></c:when>
+                                                                <c:otherwise><i class="bi bi-star"></i></c:otherwise>
                                                             </c:choose>
                                                         </c:forEach>
                                                     </span>
