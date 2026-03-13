@@ -2,6 +2,7 @@ package adapters.controllers;
 
 import application.dto.ProductReviewStatsDTO;
 import application.services.ProductService;
+import application.services.RecommendationService;
 import application.services.ReviewService;
 import domain.entities.Product;
 import domain.entities.Review;
@@ -22,12 +23,14 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
 
     private ProductService productService;
     private ReviewService reviewService;
+    private RecommendationService recommendationService;
 
     @Override
     public void init() throws ServletException {
         // Lấy các Singleton Service đã được AppConfigListener khởi tạo
         this.reviewService = (ReviewService) getServletContext().getAttribute("ReviewService");
         this.productService = (ProductService) getServletContext().getAttribute("ProductService");
+        this.recommendationService = (RecommendationService) getServletContext().getAttribute("RecommendationService");
 
         if (this.reviewService == null || this.productService == null) {
             throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
@@ -80,17 +83,20 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
                 }
                 request.setAttribute("PRODUCT_LIST", products);
                 addProductRatingsToRequest(request, products);
+                addRecommendationsToRequest(request, products);
                 forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
             } else if ("search".equals(action)) {
                 String keyword = request.getParameter("txtSearch");
                 List<Product> searchResults = productService.searchProducts(keyword);
                 request.setAttribute("PRODUCT_LIST", searchResults);
                 addProductRatingsToRequest(request, searchResults);
+                addRecommendationsToRequest(request, searchResults);
                 forwardToView(request, response, "/views/customer/index.jsp");
             } else {
                 List<Product> products = productService.getAllProducts();
                 request.setAttribute("PRODUCT_LIST", products);
                 addProductRatingsToRequest(request, products);
+                addRecommendationsToRequest(request, products);
                 forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
             }
 
@@ -115,5 +121,15 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
             }
         }
         request.setAttribute("PRODUCT_AVG_RATINGS", avgRatings);
+    }
+
+    private void addRecommendationsToRequest(HttpServletRequest request, List<Product> products) {
+        if (recommendationService == null) return;
+        HttpSession session = request.getSession(false);
+        User user = (session == null) ? null : (User) session.getAttribute("USER");
+
+        // Keep it small for UI; index.jsp can choose to render or ignore this attribute.
+        List<Product> rec = recommendationService.recommendForUser(user, products, 3);
+        request.setAttribute("RECOMMENDED_PRODUCTS", rec);
     }
 }

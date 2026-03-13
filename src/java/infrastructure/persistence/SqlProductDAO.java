@@ -103,16 +103,27 @@ public class SqlProductDAO implements IProductRepository {
     }
     
     public List<Product> searchProducts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return findAll();
+        }
+
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
                 + "FROM Products "
-                + "WHERE status != 'DEACTIVATED'"
-                + "AND ";
+                + "WHERE status != 'DEACTIVATED' "
+                + "AND (name LIKE ? OR category LIKE ? OR description LIKE ?) "
+                + "ORDER BY created_at DESC";
+
+        String like = "%" + keyword.trim() + "%";
         try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(mapRow(rs));
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, like);
+            ps.setString(2, like);
+            ps.setString(3, like);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -187,8 +198,8 @@ public class SqlProductDAO implements IProductRepository {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
                 + "FROM Products "
-                + "WHERE category = ? "
-                + "AND state != 'DEACTIVATED"
+                + "WHERE LOWER(category) = LOWER(?) "
+                + "AND status != 'DEACTIVATED' "
                 + "ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -213,31 +213,39 @@
                 <div class="row g-4">
 
                     <div class="col-6 col-md-3 reveal">
-                        <div class="category-card">
-                            <i class="bi bi-buildings category-icon"></i>
-                            <h6>Hotels</h6>
-                        </div>
+                        <a class="text-decoration-none text-dark" href="${pageContext.request.contextPath}/MainController?action=FilterByCategory&category=Hotels">
+                            <div class="category-card">
+                                <i class="bi bi-buildings category-icon"></i>
+                                <h6>Hotels</h6>
+                            </div>
+                        </a>
                     </div>
 
                     <div class="col-6 col-md-3 reveal">
-                        <div class="category-card">
-                            <i class="bi bi-cup-hot category-icon"></i>
-                            <h6>Restaurants</h6>
-                        </div>
+                        <a class="text-decoration-none text-dark" href="${pageContext.request.contextPath}/MainController?action=FilterByCategory&category=Restaurants">
+                            <div class="category-card">
+                                <i class="bi bi-cup-hot category-icon"></i>
+                                <h6>Restaurants</h6>
+                            </div>
+                        </a>
                     </div>
 
                     <div class="col-6 col-md-3 reveal">
-                        <div class="category-card">
-                            <i class="bi bi-camera category-icon"></i>
-                            <h6>Attractions</h6>
-                        </div>
+                        <a class="text-decoration-none text-dark" href="${pageContext.request.contextPath}/MainController?action=FilterByCategory&category=Attractions">
+                            <div class="category-card">
+                                <i class="bi bi-camera category-icon"></i>
+                                <h6>Attractions</h6>
+                            </div>
+                        </a>
                     </div>
 
                     <div class="col-6 col-md-3 reveal">
-                        <div class="category-card">
-                            <i class="bi bi-balloon-heart category-icon"></i>
-                            <h6>Cafes</h6>
-                        </div>
+                        <a class="text-decoration-none text-dark" href="${pageContext.request.contextPath}/MainController?action=FilterByCategory&category=Cafes">
+                            <div class="category-card">
+                                <i class="bi bi-balloon-heart category-icon"></i>
+                                <h6>Cafes</h6>
+                            </div>
+                        </a>
                     </div>
 
                 </div>
@@ -247,6 +255,80 @@
             <!-- PRODUCTS -->
 
             <div>
+
+                <c:if test="${not empty requestScope.RECOMMENDED_PRODUCTS}">
+
+                    <h3 class="fw-bold mb-4">Recommended For You</h3>
+
+                    <div class="row g-4 mb-5">
+
+                        <c:forEach var="rec" items="${requestScope.RECOMMENDED_PRODUCTS}">
+
+                            <div class="col-md-4 reveal">
+
+                                <div class="card-product">
+
+                                    <div class="card-img-wrapper">
+
+                                        <c:choose>
+
+                                            <c:when test="${not empty rec.imageUrl}">
+                                                <c:set var="recImg" value="${rec.imageUrl}"/>
+                                                <c:choose>
+                                                    <c:when test="${recImg.startsWith(pageContext.request.contextPath)}">
+                                                        <img src="${recImg}" class="card-img-top"
+                                                             onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <img src="${pageContext.request.contextPath}${recImg.startsWith('/') ? '' : '/'}${recImg}" class="card-img-top"
+                                                             onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:when>
+
+                                            <c:otherwise>
+                                                <img src="${pageContext.request.contextPath}/assets/default/default.jpg" class="card-img-top">
+                                            </c:otherwise>
+
+                                        </c:choose>
+
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <h5 class="fw-bold">${rec.name}</h5>
+
+                                        <div class="ta-rating mb-2">
+                                            <c:set var="avgRating" value="${empty requestScope.PRODUCT_AVG_RATINGS[rec.productId] ? 0 : requestScope.PRODUCT_AVG_RATINGS[rec.productId]}"/>
+                                            <c:forEach var="i" begin="1" end="5">
+                                                <c:choose>
+                                                    <c:when test="${i <= avgRating}">
+                                                        <i class="bi bi-star-fill"></i>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <i class="bi bi-star"></i>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:forEach>
+                                        </div>
+
+                                        <p class="desc">${rec.description}</p>
+
+                                        <a href="${pageContext.request.contextPath}/MainController?action=ViewDetail&id=${rec.productId}" class="btn btn-details w-100">
+                                            View Details
+                                        </a>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </c:forEach>
+
+                    </div>
+
+                </c:if>
 
                 <h3 class="fw-bold mb-4">Top Destinations</h3>
 
@@ -268,13 +350,23 @@
 
                                                 <c:when test="${not empty product.imageUrl}">
 
-                                                    <img src="${pageContext.request.contextPath}/${product.imageUrl}" class="card-img-top">
+                                                    <c:set var="pImg" value="${product.imageUrl}"/>
+                                                    <c:choose>
+                                                        <c:when test="${pImg.startsWith(pageContext.request.contextPath)}">
+                                                            <img src="${pImg}" class="card-img-top"
+                                                                 onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <img src="${pageContext.request.contextPath}${pImg.startsWith('/') ? '' : '/'}${pImg}" class="card-img-top"
+                                                                 onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
+                                                        </c:otherwise>
+                                                    </c:choose>
 
                                                 </c:when>
 
                                                 <c:otherwise>
 
-                                                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600" class="card-img-top">
+                                                    <img src="${pageContext.request.contextPath}/assets/default/default.jpg" class="card-img-top">
 
                                                 </c:otherwise>
 

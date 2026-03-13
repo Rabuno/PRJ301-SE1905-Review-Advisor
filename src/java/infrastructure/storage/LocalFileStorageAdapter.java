@@ -38,7 +38,8 @@ public class LocalFileStorageAdapter implements IFileStoragePort {
         // Ghi file vật lý
         Files.copy(fileStream, Paths.get(absolutePath), StandardCopyOption.REPLACE_EXISTING);
 
-        // Trả về URI tương đối cho DB (có contextPath nếu được cung cấp)
-        return contextPath + "/assets/uploads/" + safeFileName;
+        // Store a context-independent path in DB (more portable across deployments).
+        // Keep contextPath field for backward compatibility, but do not persist it.
+        return "/assets/uploads/" + safeFileName;
     }
 }

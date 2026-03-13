@@ -1,23 +1,13 @@
 package adapters.controllers;
 
 import application.dto.MerchantStatsDTO;
-import application.ports.IAlertRepository;
 import application.ports.IFileStoragePort;
-import application.ports.IProductRepository;
-import application.ports.IReviewRepository;
-import application.ports.IUserRepository;
 import application.services.ProductService;
 import application.services.ReviewService;
-import application.services.TriageService;
 import domain.entities.Product;
 import domain.entities.Review;
 import domain.entities.User;
 import domain.enums.ProductStatus;
-import infrastructure.ai.WekaProvider;
-import infrastructure.persistence.SqlAlertDAO;
-import infrastructure.persistence.SqlProductDAO;
-import infrastructure.persistence.SqlReviewDAO;
-import infrastructure.persistence.SqlUserDAO;
 import infrastructure.storage.LocalFileStorageAdapter;
 
 import java.io.IOException;

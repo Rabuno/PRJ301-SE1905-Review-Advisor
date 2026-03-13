@@ -23,6 +23,14 @@
         <servlet-name>ModeratorServlet</servlet-name>
         <servlet-class>adapters.controllers.ModeratorServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>RolePermissionServlet</servlet-name>
+        <servlet-class>adapters.controllers.RolePermissionServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>UserRoleServlet</servlet-name>
+        <servlet-class>adapters.controllers.UserRoleServlet</servlet-class>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>MainController</servlet-name>
@@ -43,6 +51,14 @@
     <servlet-mapping>
         <servlet-name>ModeratorServlet</servlet-name>
         <url-pattern>/ModeratorServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>RolePermissionServlet</servlet-name>
+        <url-pattern>/Admin/RolePermissions</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>UserRoleServlet</servlet-name>
+        <url-pattern>/Admin/UserRoles</url-pattern>
     </servlet-mapping>
 
     <session-config>

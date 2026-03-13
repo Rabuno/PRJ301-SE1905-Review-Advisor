@@ -93,16 +93,18 @@
             <div class="mb-5 shadow-sm rounded-4 overflow-hidden">
                 <c:choose>
                     <%-- NẾU CÓ ẢNH TRONG DATABASE: Hiện ảnh thật --%>
-                    <c:when test="${not empty product.imageUrl}">
-                        <img src="<c:url value='${product.imageUrl}' />"
-                             class="card-img-top" 
-                             alt="${product.name}" 
-                             style="height: 220px; object-fit: cover;">
+                    <c:when test="${not empty requestScope.PRODUCT.imageUrl}">
+                        <c:set var="pImg" value="${requestScope.PRODUCT.imageUrl}"/>
+                        <img src="${pImg.startsWith(pageContext.request.contextPath) ? pImg : pageContext.request.contextPath.concat(pImg.startsWith('/') ? '' : '/').concat(pImg)}"
+                             class="card-img-top"
+                             alt="${requestScope.PRODUCT.name}"
+                             style="height: 220px; object-fit: cover;"
+                             onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
                     </c:when>
 
                     <%-- NẾU KHÔNG CÓ ẢNH (NULL): Hiện ảnh default.jpg --%>
                     <c:otherwise>
-                        <img src="<c:url value='/assets/default/default.jpg' />" 
+                        <img src="${pageContext.request.contextPath}/assets/default/default.jpg" 
                              class="card-img-top" 
                              alt="Default Image" 
                              style="height: 220px; object-fit: cover;">
