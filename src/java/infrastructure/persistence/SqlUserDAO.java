@@ -67,6 +67,46 @@ public class SqlUserDAO implements IUserRepository {
     }
 
     @Override
+    public User findById(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new IllegalArgumentException("UserId cannot be null or empty");
+        }
+
+        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, u.created_at, r.role_name "
+                + "FROM Users u "
+                + "INNER JOIN Roles r ON u.role_id = r.role_id "
+                + "WHERE u.user_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return null;
+
+                User user = new User(
+                        rs.getString("user_id"),
+                        rs.getString("username"),
+                        rs.getString("password")
+                );
+                user.setRoleId(rs.getString("role_id"));
+                user.setRole(rs.getString("role_name"));
+
+                Timestamp createdAt = rs.getTimestamp("created_at");
+                if (createdAt != null) {
+                    user.setCreatedAt(createdAt.toLocalDateTime());
+                }
+
+                // Permissions are intentionally not loaded here.
+                return user;
+            }
+        } catch (Exception e) {
+            System.err.println("[SqlUserDAO] Lỗi tại findById: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
     public boolean registerUser(User user, String roleName) {
         if (user == null || roleName == null) {
             throw new IllegalArgumentException("User and roleName cannot be null");

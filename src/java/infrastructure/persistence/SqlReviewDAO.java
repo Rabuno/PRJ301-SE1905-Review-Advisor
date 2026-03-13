@@ -104,8 +104,21 @@ public class SqlReviewDAO implements IReviewRepository {
                     }
                 }
 
-                // 2. Logic Insert Alert (Chung Connection)
-                if (alert != null) {
+                // 2. Alert persistence (Chung Connection)
+                // Keep alerts in sync with current AI decision.
+                if (alert == null) {
+                    try (java.sql.PreparedStatement psDel = conn.prepareStatement("DELETE FROM Alerts WHERE review_id = ?")) {
+                        psDel.setString(1, review.getReviewId());
+                        psDel.executeUpdate();
+                    }
+                } else {
+                    // Upsert strategy: delete previous alert by review_id to avoid unique constraint issues.
+                    // (FK cascades will remove reasons/evidences.)
+                    try (java.sql.PreparedStatement psDel = conn.prepareStatement("DELETE FROM Alerts WHERE review_id = ?")) {
+                        psDel.setString(1, alert.getReviewId());
+                        psDel.executeUpdate();
+                    }
+
                     String insertAlert = "INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES (?, ?, ?, ?)";
                     try ( java.sql.PreparedStatement psA = conn.prepareStatement(insertAlert)) {
                         psA.setString(1, alert.getAlertId());
@@ -114,8 +127,36 @@ public class SqlReviewDAO implements IReviewRepository {
                         psA.setString(4, alert.getStatus());
                         psA.executeUpdate();
                     }
-                    // Bỏ qua mã chèn AlertReasons và AlertEvidences bằng executeBatch ở đây để ngắn gọn, 
-                    // nhưng áp dụng tương tự quy trình trong SqlAlertDAO.
+
+                    // Insert reasons
+                    if (alert.getReasons() != null && !alert.getReasons().isEmpty()) {
+                        String insertReason = "INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES (?, ?, ?, ?)";
+                        try (java.sql.PreparedStatement psR = conn.prepareStatement(insertReason)) {
+                            for (domain.entities.Alert.AlertReason r : alert.getReasons()) {
+                                psR.setString(1, alert.getAlertId());
+                                psR.setString(2, r.getFeatureName());
+                                psR.setDouble(3, r.getImportanceWeight());
+                                psR.setString(4, r.getDescription());
+                                psR.addBatch();
+                            }
+                            psR.executeBatch();
+                        }
+                    }
+
+                    // Insert evidences
+                    if (alert.getEvidences() != null && !alert.getEvidences().isEmpty()) {
+                        String insertEvidence = "INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value) VALUES (?, ?, ?, ?)";
+                        try (java.sql.PreparedStatement psE = conn.prepareStatement(insertEvidence)) {
+                            for (domain.entities.Alert.AlertEvidence e : alert.getEvidences()) {
+                                psE.setString(1, alert.getAlertId());
+                                psE.setString(2, e.getRuleType());
+                                psE.setDouble(3, e.getMeasuredValue());
+                                psE.setDouble(4, e.getThresholdValue());
+                                psE.addBatch();
+                            }
+                            psE.executeBatch();
+                        }
+                    }
                 }
 
                 conn.commit(); // Xác nhận Transaction
@@ -357,15 +398,23 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public int countRecentReviewsByUser(String userId, int hours) {
-        int count = 0;
-        // Logic truy vấn SQL Server: Đếm số lượng review trong X giờ qua
-        String sql = "SELECT COUNT(*) AS total_reviews FROM Reviews "
-                + "WHERE user_id = ? AND created_at >= DATEADD(hour, -?, GETDATE())";
+        // Backward-compat for older callers; prefer minute-based burst score.
+        return countRecentReviewsByUserMinutes(userId, Math.max(0, hours) * 60);
+    }
 
-        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+    @Override
+    public int countRecentReviewsByUserMinutes(String userId, int minutes) {
+        int count = 0;
+        int safeMinutes = Math.max(0, minutes);
+
+        String sql = "SELECT COUNT(*) AS total_reviews FROM Reviews "
+                + "WHERE user_id = ? AND created_at >= DATEADD(minute, -?, GETDATE())";
+
+        try ( java.sql.Connection conn = DBConnection.getConnection();
+              java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
-            ps.setInt(2, hours);
+            ps.setInt(2, safeMinutes);
 
             try ( java.sql.ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -374,9 +423,51 @@ public class SqlReviewDAO implements IReviewRepository {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("Lỗi tính toán Burst Rate trong SqlReviewDAO: " + e.getMessage());
+            System.err.println("Lỗi tính toán Burst Rate (minutes) trong SqlReviewDAO: " + e.getMessage());
         }
         return count;
+    }
+
+    @Override
+    public int countDuplicatesByExactContent(String reviewId, String content) {
+        if (content == null || content.trim().isEmpty()) return 0;
+
+        String sql = "SELECT COUNT(*) AS dup_count FROM Reviews WHERE content = ? AND review_id <> ?";
+        try (java.sql.Connection conn = DBConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, content);
+            ps.setString(2, reviewId == null ? "" : reviewId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("dup_count");
+            }
+        } catch (Exception e) {
+            System.err.println("[SqlReviewDAO] Lỗi countDuplicatesByExactContent: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    @Override
+    public int countEditsByReview(String reviewId) {
+        if (reviewId == null || reviewId.trim().isEmpty()) return 0;
+
+        // We treat update submissions as "edits" (AuditLog is the existing source of truth here).
+        String sql = "SELECT COUNT(*) AS edit_count "
+                + "FROM AuditLog "
+                + "WHERE action = 'REVIEW_SUBMITTED_UPDATE' "
+                + "AND JSON_VALUE(diff_json, '$.reviewId') = ?";
+
+        try (java.sql.Connection conn = DBConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, reviewId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("edit_count");
+            }
+        } catch (Exception e) {
+            System.err.println("[SqlReviewDAO] Lỗi countEditsByReview: " + e.getMessage());
+        }
+        return 0;
     }
 
     @Override

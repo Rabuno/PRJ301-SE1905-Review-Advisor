@@ -2,10 +2,14 @@ package adapters.controllers;
 
 import application.services.AuditService;
 import application.services.ProductService;
+import application.services.ProductTriageService;
+import adapters.dto.PendingProductDTO;
+import application.dto.AiTriageResult;
 import domain.entities.User;
 import domain.enums.ProductStatus;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -17,13 +21,15 @@ public class ProductModerationServlet extends BaseServlet {
 
     private ProductService productService;
     private AuditService auditService;
+    private ProductTriageService productTriageService;
 
     @Override
     public void init() throws ServletException {
         this.productService = (ProductService) getServletContext().getAttribute("ProductService");
         this.auditService = (AuditService) getServletContext().getAttribute("AuditService");
+        this.productTriageService = (ProductTriageService) getServletContext().getAttribute("ProductTriageService");
 
-        if (this.productService == null || this.auditService == null) {
+        if (this.productService == null || this.auditService == null || this.productTriageService == null) {
             throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
         }
     }
@@ -39,7 +45,20 @@ public class ProductModerationServlet extends BaseServlet {
         }
 
         List<domain.entities.Product> pending = productService.getProductsByStatus(ProductStatus.PENDING);
-        request.setAttribute("PENDING_PRODUCTS", pending);
+        List<PendingProductDTO> items = new ArrayList<>();
+        if (pending != null) {
+            for (domain.entities.Product p : pending) {
+                AiTriageResult r;
+                try {
+                    // Evaluate at dashboard time so moderators always see AI results, even if DB does not store them yet.
+                    r = productTriageService.evaluate(p, null);
+                } catch (Exception e) {
+                    r = new AiTriageResult(0.0, null, null);
+                }
+                items.add(new PendingProductDTO(p, r));
+            }
+        }
+        request.setAttribute("PENDING_ITEMS", items);
         forwardToView(request, response, "/views/moderation/product-dashboard.jsp");
     }
 
@@ -73,4 +92,3 @@ public class ProductModerationServlet extends BaseServlet {
         }
     }
 }
-

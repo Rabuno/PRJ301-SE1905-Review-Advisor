@@ -40,7 +40,15 @@ public class ModeratorServlet extends BaseServlet { // Kế thừa BaseServlet
             List<domain.entities.Review> flagged = reviewService.getFlaggedReviews();
             List<FlaggedReviewDTO> items = new ArrayList<>();
             for (domain.entities.Review r : flagged) {
-                items.add(new FlaggedReviewDTO(r, reviewService.getAlertByReviewId(r.getReviewId())));
+                // Backfill missing AI evidence for legacy/seed data so modal isn't N/A.
+                domain.entities.Alert alert = reviewService.ensureAlertForFlaggedReview(r);
+                if (alert == null) {
+                    alert = reviewService.getAlertByReviewId(r.getReviewId());
+                }
+
+                int dupCount = reviewService.countExactDuplicates(r.getReviewId(), r.getContent());
+                int editCount = reviewService.countEdits(r.getReviewId());
+                items.add(new FlaggedReviewDTO(r, alert, dupCount, editCount));
             }
             request.setAttribute("FLAGGED_ITEMS", items);
 
