@@ -181,29 +181,23 @@
                 <c:choose>
                     <c:when test="${not empty requestScope.PRODUCT_LIST}">
                         <c:forEach var="product" items="${requestScope.PRODUCT_LIST}">
-                            <div class="col-12 col-sm-6 col-lg-4">
-                                <div class="card h-100 shadow-sm card-product">
-
-                                    <div class="card-img-wrapper">
-                                        <span class="badge-category">
-                                            <i class="bi bi-tag-fill me-1"></i> ${not empty product.category ? product.category : 'Place'}
-                                        </span>
-                                        <c:choose>
-                                            <c:when test="${not empty product.imageUrl}">
-                                                <img src="<c:url value='${product.imageUrl}' />"
-                                                     class="card-img-top" 
-                                                     alt="${product.name}"
-                                                     onerror="this.onerror=null; this.src='<c:url value="/assets/default/default.jpg" />'">
-                                            </c:when>
-                                            <c:otherwise>
-                                                <img src="<c:url value='/assets/default/default.jpg' />" 
-                                                     class="card-img-top" 
-                                                     alt="Default Image">
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </div>
-
-                                    <div class="card-body d-flex flex-column p-4">
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 shadow-sm card-product border-0 rounded-3 overflow-hidden">
+                                    
+                                    <c:choose>
+                                        <c:when test="${not empty product.imageUrl}">
+                                            <img src="<c:url value='${product.imageUrl}' />"
+class="card-img-top" 
+                                                 alt="${product.name}" 
+                                                 style="height: 220px; object-fit: cover;">
+                                        </c:when>
+                                        <c:otherwise>
+                                            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop" 
+                                                 class="card-img-top" 
+                                                 alt="Default Image" 
+                                                 style="height: 220px; object-fit: cover;">
+                                        </c:otherwise>
+                                    </c:choose>
 
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h5 class="card-title fw-bold text-dark mb-0 text-truncate" title="${product.name}">${product.name}</h5>
@@ -252,6 +246,14 @@
                                     </div>
                                 </div>
                             </div>
+                        </c:forEach>
+                    </c:when>
+
+                    <c:otherwise>
+                        <div class="col-12 text-center py-5 bg-white rounded-3 shadow-sm">
+                            <h1 class="display-1 text-muted mb-3"><i class="bi bi-inbox"></i></h1>
+<h4 class="text-secondary fw-bold">No products available at the moment.</h4>
+                            <p class="text-muted">We are currently updating our listings. Please check back later!</p>
                         </div>
                     </c:forEach>
                 </c:when>
