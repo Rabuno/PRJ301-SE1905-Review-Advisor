@@ -28,6 +28,9 @@ public interface IReviewRepository {
 
     List<Review> getRecentReviewsByMerchant(String merchantId, int limit);
 
+    // Trend series for merchant dashboard. Each row: (date, positiveCount, negativeCount, flaggedCount)
+    List<Object[]> getMerchantReviewTrend(String merchantId, int days);
+
     int countRecentReviewsByUser(String userId, int hours);
 
     List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts();

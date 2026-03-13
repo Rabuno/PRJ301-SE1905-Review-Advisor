@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE html>
 <html>
@@ -300,6 +301,7 @@
 
                                         <div class="ta-rating mb-2">
                                             <c:set var="avgRating" value="${empty requestScope.PRODUCT_AVG_RATINGS[rec.productId] ? 0 : requestScope.PRODUCT_AVG_RATINGS[rec.productId]}"/>
+                                            <c:set var="reviewCount" value="${empty requestScope.PRODUCT_REVIEW_COUNTS[rec.productId] ? 0 : requestScope.PRODUCT_REVIEW_COUNTS[rec.productId]}"/>
                                             <c:forEach var="i" begin="1" end="5">
                                                 <c:choose>
                                                     <c:when test="${i <= avgRating}">
@@ -310,6 +312,14 @@
                                                     </c:otherwise>
                                                 </c:choose>
                                             </c:forEach>
+                                            <span class="text-muted small ms-2">(${reviewCount})</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted small">From</span>
+                                            <span class="fw-bold">
+                                                <fmt:formatNumber value="${rec.price}" type="number" maxFractionDigits="0"/>
+                                            </span>
                                         </div>
 
                                         <p class="desc">${rec.description}</p>
@@ -381,6 +391,7 @@
                                             <div class="ta-rating mb-2">
 
                                                 <c:set var="avgRating" value="${empty requestScope.PRODUCT_AVG_RATINGS[product.productId] ? 0 : requestScope.PRODUCT_AVG_RATINGS[product.productId]}"/>
+                                                <c:set var="reviewCount" value="${empty requestScope.PRODUCT_REVIEW_COUNTS[product.productId] ? 0 : requestScope.PRODUCT_REVIEW_COUNTS[product.productId]}"/>
 
                                                 <c:forEach var="i" begin="1" end="5">
 
@@ -398,6 +409,14 @@
 
                                                 </c:forEach>
 
+                                                <span class="text-muted small ms-2">(${reviewCount})</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="text-muted small">From</span>
+                                                <span class="fw-bold">
+                                                    <fmt:formatNumber value="${product.price}" type="number" maxFractionDigits="0"/>
+                                                </span>
                                             </div>
 
                                             <p class="desc">${product.description}</p>

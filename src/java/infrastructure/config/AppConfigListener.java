@@ -4,9 +4,11 @@ import application.ports.*;
 import application.services.*;
 import application.ports.IReviewTriageAI;
 import application.ports.IProductRecommendationAI;
+import application.ports.IProductTriageAI;
 import infrastructure.ai.ApiProductRecommendationProvider;
 import infrastructure.ai.ApiReviewAiProvider;
 import infrastructure.ai.FallbackReviewAiProvider;
+import infrastructure.ai.HeuristicProductAiProvider;
 import infrastructure.ai.HeuristicReviewAiProvider;
 import infrastructure.persistence.*;
 import infrastructure.storage.LocalFileStorageAdapter;
@@ -62,6 +64,10 @@ public class AppConfigListener implements ServletContextListener {
             AuditService auditService = new AuditService(auditDAO);
             AuthService authService = new AuthService(userDAO);
 
+            // Product triage (no merchant auto-activate)
+            IProductTriageAI productTriageAI = new HeuristicProductAiProvider();
+            ProductTriageService productTriageService = new ProductTriageService(productTriageAI);
+
             // 3.1 Recommendation Service (API-first, fallback top-rated)
             IProductRecommendationAI recAI = null;
             String recommendUrl = System.getenv("AI_RECOMMEND_URL");
@@ -87,6 +93,7 @@ public class AppConfigListener implements ServletContextListener {
             context.setAttribute("UserRepository", userDAO);
             context.setAttribute("RoleRepository", roleDAO);
             context.setAttribute("AuthService", authService);
+            context.setAttribute("ProductTriageService", productTriageService);
 
             System.out.println("[AppConfigListener] Các dịch vụ đã được khởi tạo và đăng ký thành công.");
         } catch (Exception e) {

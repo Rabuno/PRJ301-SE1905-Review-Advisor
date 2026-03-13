@@ -39,6 +39,10 @@
                             <a class="nav-link text-danger fw-bold"
                                href="${pageContext.request.contextPath}/ModeratorServlet">Moderation</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-danger fw-bold"
+                               href="${pageContext.request.contextPath}/ModeratorProducts">Product Moderation</a>
+                        </li>
                     </c:if>
 
                     <c:if test="${sessionScope.USER.role eq 'AUDITOR'}">
@@ -52,6 +56,10 @@
                         <li class="nav-item">
                             <a class="nav-link fw-bold text-danger"
                                href="${pageContext.request.contextPath}/ModeratorServlet">Moderation</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-danger"
+                               href="${pageContext.request.contextPath}/ModeratorProducts">Product Moderation</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link fw-bold text-primary"
@@ -85,4 +93,3 @@
         </div>
     </div>
 </nav>
-

@@ -449,4 +449,45 @@ public class SqlReviewDAO implements IReviewRepository {
         }
         return new java.util.ArrayList<>(dtoMap.values());
     }
+
+    @Override
+    public List<Object[]> getMerchantReviewTrend(String merchantId, int days) {
+        if (days <= 0) days = 7;
+
+        List<Object[]> rows = new ArrayList<>();
+
+        // Positive: PUBLISHED and rating >= 4
+        // Negative: PUBLISHED and rating <= 2
+        // Flagged: status = FLAGGED
+        String sql = "SELECT CONVERT(date, r.created_at) AS d, "
+                + "SUM(CASE WHEN r.status = 'PUBLISHED' AND r.rating >= 4 THEN 1 ELSE 0 END) AS positive_count, "
+                + "SUM(CASE WHEN r.status = 'PUBLISHED' AND r.rating <= 2 THEN 1 ELSE 0 END) AS negative_count, "
+                + "SUM(CASE WHEN r.status = 'FLAGGED' THEN 1 ELSE 0 END) AS flagged_count "
+                + "FROM Reviews r "
+                + "JOIN Products p ON r.product_id = p.product_id "
+                + "WHERE p.merchant_id = ? "
+                + "AND r.created_at >= DATEADD(day, -?, CONVERT(date, GETDATE())) "
+                + "GROUP BY CONVERT(date, r.created_at) "
+                + "ORDER BY d ASC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, merchantId);
+            ps.setInt(2, days - 1);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Date d = rs.getDate("d");
+                    int pos = rs.getInt("positive_count");
+                    int neg = rs.getInt("negative_count");
+                    int flagged = rs.getInt("flagged_count");
+                    rows.add(new Object[]{d, pos, neg, flagged});
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rows;
+    }
 }

@@ -2,6 +2,7 @@ package application.services;
 
 import application.ports.IProductRepository;
 import domain.entities.Product;
+import domain.enums.ProductStatus;
 import java.util.List;
 
 public class ProductService {
@@ -17,6 +18,10 @@ public class ProductService {
 
     public Product getProductById(String productId) {
         return productRepository.findById(productId);
+    }
+
+    public Product getProductByIdAnyStatus(String productId) {
+        return productRepository.findByIdAnyStatus(productId);
     }
     
     public List<Product> findByCategory(String category) {
@@ -41,5 +46,13 @@ public class ProductService {
 
     public boolean updateProduct(Product product) {
         return productRepository.update(product);
+    }
+
+    public List<Product> getProductsByStatus(ProductStatus status) {
+        return productRepository.findByStatus(status);
+    }
+
+    public boolean updateProductStatus(String productId, ProductStatus status) {
+        return productRepository.updateStatus(productId, status);
     }
 }

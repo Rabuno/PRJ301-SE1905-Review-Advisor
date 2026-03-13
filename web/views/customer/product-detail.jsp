@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
 <!DOCTYPE html>
 <html>
@@ -237,6 +238,52 @@
                             </c:otherwise>
                         </c:choose>
                     </div>
+
+                    <c:if test="${not empty requestScope.RELATED_PRODUCTS}">
+                        <div class="mt-5">
+                            <h4 class="fw-bold mb-3">Related Places</h4>
+                            <div class="row g-3">
+                                <c:forEach var="rp" items="${requestScope.RELATED_PRODUCTS}">
+                                    <div class="col-md-4">
+                                        <div class="card shadow-sm border-0 h-100">
+                                            <c:set var="img" value="${rp.imageUrl}"/>
+                                            <img class="card-img-top" style="height: 160px; object-fit: cover;"
+                                                 src="${empty img ? pageContext.request.contextPath.concat('/assets/default/default.jpg') : (img.startsWith(pageContext.request.contextPath) ? img : pageContext.request.contextPath.concat(img.startsWith('/') ? '' : '/').concat(img))}"
+                                                 onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
+                                            <div class="card-body">
+                                                <div class="fw-bold">${rp.name}</div>
+                                                <div class="small text-muted mb-2">${rp.category}</div>
+
+                                                <div class="ta-rating-stars mb-2">
+                                                    <c:set var="avgRating" value="${empty requestScope.PRODUCT_AVG_RATINGS[rp.productId] ? 0 : requestScope.PRODUCT_AVG_RATINGS[rp.productId]}"/>
+                                                    <c:set var="reviewCount" value="${empty requestScope.PRODUCT_REVIEW_COUNTS[rp.productId] ? 0 : requestScope.PRODUCT_REVIEW_COUNTS[rp.productId]}"/>
+                                                    <c:forEach begin="1" end="5" var="i">
+                                                        <c:choose>
+                                                            <c:when test="${i <= avgRating}"><i class="bi bi-star-fill"></i></c:when>
+                                                            <c:otherwise><i class="bi bi-star"></i></c:otherwise>
+                                                        </c:choose>
+                                                    </c:forEach>
+                                                    <span class="text-muted small ms-1">(${reviewCount})</span>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span class="text-muted small">From</span>
+                                                    <span class="fw-bold">
+                                                        <fmt:formatNumber value="${rp.price}" type="number" maxFractionDigits="0"/>
+                                                    </span>
+                                                </div>
+
+                                                <a class="btn btn-outline-dark btn-sm w-100"
+                                                   href="${pageContext.request.contextPath}/MainController?action=ViewDetail&id=${rp.productId}">
+                                                    View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </div>
+                        </div>
+                    </c:if>
                 </div>
 
                 <div class="col-lg-4 mt-4 mt-lg-0">

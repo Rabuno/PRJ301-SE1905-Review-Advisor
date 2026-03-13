@@ -57,6 +57,21 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
                     request.setAttribute("AVERAGE_RATING", stats.getAverageRatingFormatted());
                     request.setAttribute("AVERAGE_RATING_RAW", stats.getAverageRating());
                     request.setAttribute("STAR_COUNTS", stats.getStarCounts());
+
+                    // Related products (same category), excluding current
+                    List<Product> related = productService.findByCategory(product.getCategory());
+                    if (related != null) {
+                        related.removeIf(p -> p == null || productId.equals(p.getProductId()));
+                    }
+                    if (recommendationService != null && related != null && !related.isEmpty()) {
+                        HttpSession session = request.getSession(false);
+                        User u = (session == null) ? null : (User) session.getAttribute("USER");
+                        related = recommendationService.recommendForUser(u, related, 3);
+                    } else if (related != null && related.size() > 3) {
+                        related = related.subList(0, 3);
+                    }
+                    request.setAttribute("RELATED_PRODUCTS", related);
+                    addProductRatingsToRequest(request, related);
                     forwardToView(request, response, "/views/customer/product-detail.jsp"); // Sử dụng hàm từ BaseServlet
                 } else {
                     request.setAttribute("ERROR", "Product not found!");
@@ -110,6 +125,7 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
     private void addProductRatingsToRequest(HttpServletRequest request, List<Product> products) {
         // Map productId -> average rating (0.0 if no reviews)
         Map<String, Double> avgRatings = new HashMap<>();
+        Map<String, Integer> reviewCounts = new HashMap<>();
         if (products != null) {
             for (Product p : products) {
                 if (p == null || p.getProductId() == null) {
@@ -118,9 +134,11 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
                 List<Review> reviews = reviewService.getReviewsByProduct(p.getProductId());
                 ProductReviewStatsDTO stats = new ProductReviewStatsDTO(reviews);
                 avgRatings.put(p.getProductId(), stats.getAverageRating());
+                reviewCounts.put(p.getProductId(), stats.getTotalReviews());
             }
         }
         request.setAttribute("PRODUCT_AVG_RATINGS", avgRatings);
+        request.setAttribute("PRODUCT_REVIEW_COUNTS", reviewCounts);
     }
 
     private void addRecommendationsToRequest(HttpServletRequest request, List<Product> products) {

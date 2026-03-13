@@ -118,6 +118,10 @@ public class ReviewService {
         return reviewRepository.getRecentReviewsByMerchant(merchantId, limit);
     }
 
+    public List<Object[]> getMerchantReviewTrend(String merchantId, int days) {
+        return reviewRepository.getMerchantReviewTrend(merchantId, days);
+    }
+
     // Bổ sung luồng gọi DTO phục vụ Moderator Dashboard
     public List<application.dto.AlertDashboardDTO> getFlaggedReviewsForDashboard() {
         return reviewRepository.getFlaggedReviewsWithAlerts();

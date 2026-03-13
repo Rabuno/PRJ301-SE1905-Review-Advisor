@@ -23,12 +23,14 @@ import javax.servlet.annotation.MultipartConfig;
 public class ReviewServlet extends BaseServlet {
 
     private ReviewService reviewService;
+    private application.services.AuditService auditService;
 
     @Override
     public void init() throws ServletException {
         this.reviewService = (ReviewService) getServletContext().getAttribute("ReviewService");
+        this.auditService = (application.services.AuditService) getServletContext().getAttribute("AuditService");
 
-        if (this.reviewService == null) {
+        if (this.reviewService == null || this.auditService == null) {
             throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
         }
     }
@@ -39,11 +41,27 @@ public class ReviewServlet extends BaseServlet {
         // ... (Nội dung của doGet được giữ nguyên vẹn) ...
         String action = request.getParameter("action");
         if ("write".equals(action)) {
+            HttpSession session = request.getSession(false);
+            User u = (session == null) ? null : (User) session.getAttribute("USER");
+            if (u == null || !u.hasPermission("PERM_REVIEW_CREATE")) {
+                redirect(request, response, "/views/shared/accessDenied.jsp");
+                return;
+            }
             forwardToView(request, response, "/views/customer/write-review.jsp");
         } else if ("edit".equals(action)) {
+            HttpSession session = request.getSession(false);
+            User u = (session == null) ? null : (User) session.getAttribute("USER");
+            if (u == null || !u.hasPermission("PERM_REVIEW_UPDATE")) {
+                redirect(request, response, "/views/shared/accessDenied.jsp");
+                return;
+            }
             String reviewId = request.getParameter("reviewId");
             Review existingReview = reviewService.getReviewById(reviewId);
             if (existingReview != null) {
+                if (!"ADMIN".equals(u.getRole()) && !existingReview.getUserId().equals(u.getUserId())) {
+                    redirect(request, response, "/views/shared/accessDenied.jsp");
+                    return;
+                }
                 request.setAttribute("REVIEW", existingReview);
                 forwardToView(request, response, "/views/customer/write-review.jsp");
             } else {
@@ -52,9 +70,25 @@ public class ReviewServlet extends BaseServlet {
             }
         } else if ("delete".equals(action)) {
             try {
+                HttpSession session = request.getSession(false);
+                User u = (session == null) ? null : (User) session.getAttribute("USER");
+                if (u == null || !u.hasPermission("PERM_REVIEW_DELETE")) {
+                    redirect(request, response, "/views/shared/accessDenied.jsp");
+                    return;
+                }
                 String reviewId = request.getParameter("reviewId");
                 String productId = request.getParameter("productId");
                 String source = request.getParameter("source");
+
+                Review existingReview = reviewService.getReviewById(reviewId);
+                if (existingReview == null) {
+                    redirect(request, response, "/MainController?action=MyReviews");
+                    return;
+                }
+                if (!"ADMIN".equals(u.getRole()) && !existingReview.getUserId().equals(u.getUserId())) {
+                    redirect(request, response, "/views/shared/accessDenied.jsp");
+                    return;
+                }
 
                 reviewService.deleteReview(reviewId);
                 request.getSession().setAttribute("SUCCESS_MSG", "Đã xóa đánh giá thành công!");
@@ -124,22 +158,52 @@ public class ReviewServlet extends BaseServlet {
 
             String action = request.getParameter("action");
             if ("update".equals(action)) {
+                if (!currentUser.hasPermission("PERM_REVIEW_UPDATE")) {
+                    redirect(request, response, "/views/shared/accessDenied.jsp");
+                    return;
+                }
                 String existingReviewId = request.getParameter("reviewId");
+                Review existing = reviewService.getReviewById(existingReviewId);
+                if (existing == null) {
+                    request.setAttribute("ERROR", "Review not found!");
+                    forwardToView(request, response, "/views/customer/write-review.jsp");
+                    return;
+                }
+                if (!"ADMIN".equals(currentUser.getRole()) && !existing.getUserId().equals(currentUser.getUserId())) {
+                    redirect(request, response, "/views/shared/accessDenied.jsp");
+                    return;
+                }
                 Review updatedReview = new Review(existingReviewId, productId, currentUser.getUserId(), content, rating);
 
                 // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
                 reviewService.submitReview(updatedReview, currentUser, imageStream, extension);
 
+                auditService.logAction(currentUser.getUserId(), "REVIEW_SUBMITTED_UPDATE",
+                        "{\"reviewId\":\"" + existingReviewId + "\",\"status\":\"" + updatedReview.getStatus() + "\"}");
+
                 request.getSession().setAttribute("SUCCESS_MSG", "Đánh giá của bạn đã được cập nhật thành công!");
                 redirect(request, response, "/MainController?action=MyReviews");
             } else {
+                if (!currentUser.hasPermission("PERM_REVIEW_CREATE")) {
+                    redirect(request, response, "/views/shared/accessDenied.jsp");
+                    return;
+                }
                 String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
                 Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
 
                 // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
                 reviewService.submitReview(newReview, currentUser, imageStream, extension);
 
-                request.getSession().setAttribute("SUCCESS_MSG", "Cảm ơn bạn đã gửi đánh giá! Hệ thống AI đang phân tích nội dung.");
+                auditService.logAction(currentUser.getUserId(), "REVIEW_SUBMITTED_CREATE",
+                        "{\"reviewId\":\"" + reviewId + "\",\"productId\":\"" + productId + "\",\"status\":\"" + newReview.getStatus() + "\"}");
+
+                if (newReview.getStatus() == domain.enums.ReviewStatus.FLAGGED) {
+                    request.getSession().setAttribute("SUCCESS_MSG", "Review submitted but flagged by AI. A moderator will review it.");
+                } else if (newReview.getStatus() == domain.enums.ReviewStatus.PUBLISHED) {
+                    request.getSession().setAttribute("SUCCESS_MSG", "Thanks! Your review passed AI and is published (may be spot-checked).");
+                } else {
+                    request.getSession().setAttribute("SUCCESS_MSG", "Thanks! Your review is pending AI analysis.");
+                }
                 redirect(request, response, "/MainController?action=ViewDetail&id=" + productId);
             }
 

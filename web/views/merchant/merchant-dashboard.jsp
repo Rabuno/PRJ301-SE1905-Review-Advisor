@@ -65,7 +65,7 @@
                 <div class="row">
                     <div class="col-md-7 mb-4">
                         <div class="card shadow-sm border-0 h-100 p-3">
-                            <h5 class="fw-bold text-dark mb-3">Review Trends (Last 7 Days)</h5>
+                            <h5 class="fw-bold text-dark mb-3">Review Trends (Good vs Bad, Last 7 Days)</h5>
                             <canvas id="reviewTrendChart"></canvas>
                         </div>
                     </div>
@@ -122,27 +122,36 @@
                         type: 'line',
                         data: {
                             labels: ${ not empty requestScope.CHART_LABELS ? requestScope.CHART_LABELS : "['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today']" },
-                        datasets: [
-                        {
-                            label: 'Organic Reviews',
-                            data: ${ not empty requestScope.CHART_ORGANIC_DATA ? requestScope.CHART_ORGANIC_DATA : "[12, 19, 15, 25, 22, 30, 28]" },
-                        borderColor: '#198754',
-                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Flagged (Spam/AI)',
-                        data: ${ not empty requestScope.CHART_FLAGGED_DATA ? requestScope.CHART_FLAGGED_DATA : "[1, 3, 0, 2, 5, 1, 0]" },
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                    }
-                ]
-            },
+                            datasets: [
+                                {
+                                    label: 'Good (4-5★ Published)',
+                                    data: ${ not empty requestScope.CHART_POSITIVE_DATA ? requestScope.CHART_POSITIVE_DATA : "[0,0,0,0,0,0,0]" },
+                                    borderColor: '#198754',
+                                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Bad (1-2★ Published)',
+                                    data: ${ not empty requestScope.CHART_NEGATIVE_DATA ? requestScope.CHART_NEGATIVE_DATA : "[0,0,0,0,0,0,0]" },
+                                    borderColor: '#fd7e14',
+                                    backgroundColor: 'rgba(253, 126, 20, 0.12)',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Flagged (AI)',
+                                    data: ${ not empty requestScope.CHART_FLAGGED_DATA ? requestScope.CHART_FLAGGED_DATA : "[0,0,0,0,0,0,0]" },
+                                    borderColor: '#dc3545',
+                                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true
+                                }
+                            ]
+                        },
                     options: {
                     responsive: true,
                     plugins: { legend: { position: 'top' } },

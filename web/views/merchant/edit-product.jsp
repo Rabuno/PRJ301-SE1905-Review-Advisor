@@ -72,11 +72,10 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Status</label>
-                                    <select name="status" class="form-select">
-                                        <option value="ACTIVE" ${requestScope.PRODUCT.status=='ACTIVE' ? 'selected' : ''}>ACTIVE</option>
-                                        <option value="PENDING" ${requestScope.PRODUCT.status=='PENDING' ? 'selected' : ''}>PENDING</option>
-                                        <option value="DEACTIVATED" ${requestScope.PRODUCT.status=='DEACTIVATED' ? 'selected' : ''}>DEACTIVATED</option>
-                                    </select>
+                                    <div class="form-control bg-light">
+                                        <span class="badge bg-light text-dark border">${requestScope.PRODUCT.status}</span>
+                                        <span class="text-muted small ms-2">Managed by Moderator/Admin after AI scan.</span>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">

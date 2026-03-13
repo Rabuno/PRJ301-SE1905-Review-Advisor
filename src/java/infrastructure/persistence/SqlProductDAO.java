@@ -2,6 +2,7 @@ package infrastructure.persistence;
 
 import application.ports.IProductRepository;
 import domain.entities.Product;
+import domain.enums.ProductStatus;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -129,6 +130,61 @@ public class SqlProductDAO implements IProductRepository {
             e.printStackTrace();
         }
         return list;
+    }
+
+    @Override
+    public Product findByIdAnyStatus(String productId) {
+        String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
+                + "FROM Products WHERE product_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setStatus(ProductStatus.valueOf(rs.getString("status")));
+                    return p;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public List<Product> findByStatus(ProductStatus status) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
+                + "FROM Products WHERE status = ? ORDER BY created_at DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setStatus(ProductStatus.valueOf(rs.getString("status")));
+                    list.add(p);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public boolean updateStatus(String productId, ProductStatus status) {
+        String sql = "UPDATE Products SET status = ? WHERE product_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setString(2, productId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
     
     @Override
