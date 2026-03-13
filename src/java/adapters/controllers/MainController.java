@@ -77,6 +77,11 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
                 }
                 request.setAttribute("PRODUCT_LIST", products);
                 forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
+            } else if ("search".equals(action)) {
+                String keyword = request.getParameter("txtSearch");
+                List<Product> searchResults = productService.searchProducts(keyword);
+                request.setAttribute("PRODUCT_LIST", searchResults);
+                forwardToView(request, response, "/views/customer/index.jsp");
             } else {
                 List<Product> products = productService.getAllProducts();
                 request.setAttribute("PRODUCT_LIST", products);
