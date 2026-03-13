@@ -42,7 +42,8 @@ public class UserRoleServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!"ADMIN".equals(user.getRole()) && !user.hasPermission("PERM_AI_RETRAIN")) {
+        // Admin-only: user role assignment is a privileged action.
+        if (!"ADMIN".equals(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }
@@ -68,7 +69,7 @@ public class UserRoleServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!"ADMIN".equals(user.getRole()) && !user.hasPermission("PERM_AI_RETRAIN")) {
+        if (!"ADMIN".equals(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }

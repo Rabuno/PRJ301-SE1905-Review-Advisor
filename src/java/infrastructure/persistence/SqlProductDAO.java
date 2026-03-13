@@ -6,6 +6,7 @@ import domain.enums.ProductStatus;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +35,8 @@ public class SqlProductDAO implements IProductRepository {
     public List<Product> findAll() {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
-                + "FROM Products WHERE status = 'ACTIVE'";
+                + "FROM Products WHERE status = 'ACTIVE' "
+                + "ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -103,27 +105,51 @@ public class SqlProductDAO implements IProductRepository {
         return null;
     }
     
+    @Override
     public List<Product> searchProducts(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return findAll();
         }
 
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
+
+        // Prefer full-text search when available; otherwise fall back to LIKE.
+        String ftSql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
+                + "FROM Products "
+                + "WHERE status = 'ACTIVE' "
+                + "AND CONTAINS((name, category, description), ?) "
+                + "ORDER BY created_at DESC";
+
+        String likeSql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
                 + "FROM Products "
                 + "WHERE status = 'ACTIVE' "
                 + "AND (name LIKE ? OR category LIKE ? OR description LIKE ?) "
                 + "ORDER BY created_at DESC";
 
         String like = "%" + keyword.trim() + "%";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, like);
-            ps.setString(2, like);
-            ps.setString(3, like);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1) FullText attempt
+            try (PreparedStatement ps = conn.prepareStatement(ftSql)) {
+                ps.setString(1, buildContainsQuery(keyword));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(mapRow(rs));
+                    }
+                }
+                return list;
+            } catch (SQLException ftEx) {
+                // FullText not installed or no fulltext index -> fallback to LIKE.
+            }
+
+            // 2) LIKE fallback
+            try (PreparedStatement ps = conn.prepareStatement(likeSql)) {
+                ps.setString(1, like);
+                ps.setString(2, like);
+                ps.setString(3, like);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(mapRow(rs));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -250,11 +276,12 @@ public class SqlProductDAO implements IProductRepository {
         }
     }
     
+    @Override
     public List<Product> findByCategory(String category) {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
                 + "FROM Products "
-                + "WHERE LOWER(category) = LOWER(?) "
+                + "WHERE category = ? "
                 + "AND status = 'ACTIVE' "
                 + "ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection();
@@ -271,5 +298,32 @@ public class SqlProductDAO implements IProductRepository {
             e.printStackTrace();
         }
         return list;
+    }
+
+    private static String buildContainsQuery(String raw) {
+        if (raw == null) return "\"\"";
+        String cleaned = raw.trim();
+        if (cleaned.isEmpty()) return "\"\"";
+
+        // Keep letters/numbers, replace the rest with spaces.
+        cleaned = cleaned.replaceAll("[^\\p{L}\\p{N}\\s]+", " ");
+        String[] parts = cleaned.trim().split("\\s+");
+
+        List<String> terms = new ArrayList<>();
+        for (String p : parts) {
+            if (p == null) continue;
+            String t = p.trim();
+            if (t.length() < 2) continue;
+            t = t.replace("\"", "\"\"");
+            terms.add("\"" + t + "*\"");
+        }
+
+        if (terms.isEmpty()) {
+            String t = raw.trim().replace("\"", "\"\"");
+            if (t.isEmpty()) return "\"\"";
+            return "\"" + t + "*\"";
+        }
+
+        return String.join(" AND ", terms);
     }
 }

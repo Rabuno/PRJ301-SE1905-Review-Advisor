@@ -211,11 +211,12 @@ INSERT INTO AuditLog (audit_id, actor_user_id, action, diff_json, previous_hash,
 -- 4. INDEXES (Performance)
 CREATE INDEX IX_Users_RoleId ON Users(role_id);
 CREATE INDEX IX_Products_Status_Created ON Products(status, created_at);
-CREATE INDEX IX_Products_Category_Status ON Products(category, status);
 CREATE INDEX IX_Products_Merchant_Created ON Products(merchant_id, created_at);
 CREATE INDEX IX_Reviews_Product_Status_Created ON Reviews(product_id, status, created_at);
 CREATE INDEX IX_Reviews_User_Created ON Reviews(user_id, created_at);
 CREATE INDEX IX_Alerts_Status_Created ON Alerts(status, created_at);
+-- Common join path: Alerts -> Reviews (by review_id)
+CREATE INDEX IX_Alerts_ReviewId ON Alerts(review_id);
 CREATE INDEX IX_AlertReasons_AlertId ON AlertReasons(alert_id);
 CREATE INDEX IX_AlertEvidences_AlertId ON AlertEvidences(alert_id);
 CREATE INDEX IX_AuditLog_Actor_Timestamp ON AuditLog(actor_user_id, timestamp);
