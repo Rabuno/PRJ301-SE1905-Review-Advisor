@@ -85,13 +85,22 @@
 
             <div class="mb-5 shadow-sm rounded-4 overflow-hidden">
                 <c:choose>
-                    <c:when test="${not empty requestScope.PRODUCT.imageUrl}">
-                        <img src="<c:url value='${requestScope.PRODUCT.imageUrl}' />" class="img-main" alt="${requestScope.PRODUCT.name}">
+                    <%-- NẾU CÓ ẢNH TRONG DATABASE: Hiện ảnh thật --%>
+                    <c:when test="${not empty product.imageUrl}">
+                        <img src="<c:url value='${product.imageUrl}' />"
+                             class="card-img-top" 
+                             alt="${product.name}" 
+                             style="height: 220px; object-fit: cover;">
                     </c:when>
+
+                    <%-- NẾU KHÔNG CÓ ẢNH (NULL): Hiện ảnh default.jpg --%>
                     <c:otherwise>
-                        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&h=500&fit=crop" class="img-main" alt="Main Image">
+                        <img src="<c:url value='/assets/default/default.jpg' />" 
+                             class="card-img-top" 
+                             alt="Default Image" 
+                             style="height: 220px; object-fit: cover;">
                     </c:otherwise>
-                </c:choose>
+                </c:choose>F
             </div>
 
             <div class="row">
@@ -106,10 +115,32 @@
                     <div class="row mb-5">
                         <div class="col-md-3 text-center">
                             <h1 class="display-3 fw-bold mb-0">${TOTAL_REVIEWS > 0 ? AVERAGE_RATING : '0.0'}</h1>
-                            <div class="ta-rating-stars mb-2">
-                                <i class="bi bi-circle-fill"></i><i class="bi bi-circle-fill"></i><i class="bi bi-circle-fill"></i><i class="bi bi-circle-fill"></i><i class="bi bi-circle-half"></i>
+                            <div class="col-md-3 text-center">
+                                <h1 class="display-3 fw-bold mb-0">${TOTAL_REVIEWS > 0 ? AVERAGE_RATING : '0.0'}</h1>
+                                <div class="ta-rating-stars mb-2">
+                                    <%-- Lấy giá trị rating hiện tại, nếu chưa có review thì mặc định là 0 --%>
+                                    <c:set var="currentRating" value="${TOTAL_REVIEWS > 0 ? AVERAGE_RATING : 0}" />
+
+                                    <%-- Lặp 5 lần để in ra 5 biểu tượng --%>
+                                    <c:forEach var="i" begin="1" end="5">
+                                        <c:choose>
+                                            <%-- Nếu điểm lớn hơn hoặc bằng vị trí hiện tại -> Tròn đặc --%>
+                                            <c:when test="${currentRating >= i}">
+                                                <i class="bi bi-circle-fill text-success"></i>
+                                            </c:when>
+                                            <%-- Nếu điểm lớn hơn hoặc bằng vị trí hiện tại trừ 0.5 -> Tròn khuyết (ví dụ: 4.5) --%>
+                                            <c:when test="${currentRating >= (i - 0.5)}">
+                                                <i class="bi bi-circle-half text-success"></i>
+                                            </c:when>
+                                            <%-- Còn lại -> Tròn rỗng --%>
+                                            <c:otherwise>
+                                                <i class="bi bi-circle text-success"></i>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </c:forEach>
+                                </div>
+                                <p class="text-muted">${TOTAL_REVIEWS} reviews</p>
                             </div>
-                            <p class="text-muted">${TOTAL_REVIEWS} reviews</p>
                         </div>
                         <div class="col-md-9">
                             <div class="d-flex align-items-center mb-1">
