@@ -39,16 +39,37 @@ public class DatabaseInitListener implements ServletContextListener {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty() || line.startsWith("--")) continue;
-                sql.append(line);
-                if (line.trim().endsWith(";")) {
-                    try (Statement stmt = conn.createStatement()) {
-                        stmt.execute(sql.toString());
-                    }
-                    sql.setLength(0); // Làm sạch buffer cho lệnh tiếp theo
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("--")) {
+                    continue;
+                }
+
+                // SQL Server scripts often use GO as a batch delimiter.
+                if ("GO".equalsIgnoreCase(trimmed)) {
+                    flushStatement(conn, sql);
+                    continue;
+                }
+
+                sql.append(line).append("\n");
+
+                // Use ';' as a statement delimiter (works for most DDL/DML in this project).
+                if (trimmed.endsWith(";")) {
+                    flushStatement(conn, sql);
                 }
             }
+
+            // Execute any remaining statement at EOF.
+            flushStatement(conn, sql);
         }
+    }
+
+    private void flushStatement(Connection conn, StringBuilder sql) throws Exception {
+        String stmtText = sql.toString().trim();
+        if (stmtText.isEmpty()) return;
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(stmtText);
+        }
+        sql.setLength(0);
     }
 
     @Override

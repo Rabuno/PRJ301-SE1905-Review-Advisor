@@ -6,9 +6,11 @@ import java.sql.SQLException;
 
 public class DBConnection {
     // URL kết nối tới SQL Server 2019
-    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=ReviewPlatform;trustServerCertificate=true;";
-    private static final String USER = "sa";
-    private static final String PASSWORD = "12345";
+    // Prefer environment variables for portability; fall back to local defaults.
+    private static final String URL = getEnv("DB_URL",
+            "jdbc:sqlserver://localhost:1433;databaseName=ReviewPlatform;trustServerCertificate=true;");
+    private static final String USER = getEnv("DB_USER", "sa");
+    private static final String PASSWORD = getEnv("DB_PASSWORD", "12345");
 
     static {
         try {
@@ -21,5 +23,14 @@ public class DBConnection {
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
+    }
+
+    private static String getEnv(String key, String fallback) {
+        try {
+            String v = System.getenv(key);
+            if (v != null && !v.trim().isEmpty()) return v.trim();
+        } catch (Exception ignored) {
+        }
+        return fallback;
     }
 }

@@ -84,6 +84,10 @@ public class ReviewServlet extends BaseServlet {
 
         try {
             HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("USER") == null) {
+                redirect(request, response, "/login.jsp");
+                return;
+            }
             User currentUser = (User) session.getAttribute("USER");
 
             String productId = request.getParameter("productId");

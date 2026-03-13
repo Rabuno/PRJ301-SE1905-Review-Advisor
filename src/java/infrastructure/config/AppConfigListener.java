@@ -29,6 +29,7 @@ public class AppConfigListener implements ServletContextListener {
             IAlertRepository alertDAO = new SqlAlertDAO();
             IProductRepository productDAO = new SqlProductDAO();
             IAuditRepository auditDAO = new SqlAuditDAO();
+            IRoleRepository roleDAO = new SqlRoleDAO();
 
             // 2. Khởi tạo các Adapter hạ tầng
             String uploadDirPath = context.getRealPath("/assets/uploads");
@@ -59,6 +60,7 @@ public class AppConfigListener implements ServletContextListener {
             ReviewService reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
             ProductService productService = new ProductService(productDAO);
             AuditService auditService = new AuditService(auditDAO);
+            AuthService authService = new AuthService(userDAO);
 
             // 3.1 Recommendation Service (API-first, fallback top-rated)
             IProductRecommendationAI recAI = null;
@@ -82,6 +84,9 @@ public class AppConfigListener implements ServletContextListener {
             context.setAttribute("ProductService", productService);
             context.setAttribute("AuditService", auditService);
             context.setAttribute("RecommendationService", recommendationService);
+            context.setAttribute("UserRepository", userDAO);
+            context.setAttribute("RoleRepository", roleDAO);
+            context.setAttribute("AuthService", authService);
 
             System.out.println("[AppConfigListener] Các dịch vụ đã được khởi tạo và đăng ký thành công.");
         } catch (Exception e) {

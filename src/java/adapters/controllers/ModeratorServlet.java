@@ -3,10 +3,12 @@ package adapters.controllers;
 import application.services.AuditService;
 import application.services.ReviewService;
 import application.dto.AlertDashboardDTO;
+import adapters.dto.FlaggedReviewDTO;
 import domain.entities.User;
 import domain.enums.ReviewStatus;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -34,6 +36,15 @@ public class ModeratorServlet extends BaseServlet { // Kế thừa BaseServlet
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
+            // Legacy moderation UI expects Review + Alert evidence.
+            List<domain.entities.Review> flagged = reviewService.getFlaggedReviews();
+            List<FlaggedReviewDTO> items = new ArrayList<>();
+            for (domain.entities.Review r : flagged) {
+                items.add(new FlaggedReviewDTO(r, reviewService.getAlertByReviewId(r.getReviewId())));
+            }
+            request.setAttribute("FLAGGED_ITEMS", items);
+
+            // Keep the dashboard DTO available for newer views.
             List<AlertDashboardDTO> flaggedReviews = reviewService.getFlaggedReviewsForDashboard();
             request.setAttribute("FLAGGED_REVIEWS", flaggedReviews);
             forwardToView(request, response, "/views/moderation/dashboard.jsp"); // Sử dụng BaseServlet

@@ -33,6 +33,17 @@ public class RoleFilter implements Filter {
         HttpSession session = req.getSession(false);
 
         if (session == null || session.getAttribute("USER") == null) {
+            // Public endpoints: view/search/filter/detail on MainController
+            if (uri.contains("/MainController")) {
+                String action = req.getParameter("action");
+                if (action == null
+                        || "search".equals(action)
+                        || "FilterByCategory".equals(action)
+                        || "ViewDetail".equals(action)) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+            }
             res.sendRedirect(contextPath + "/login.jsp");
             return;
         }

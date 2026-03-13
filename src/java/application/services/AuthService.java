@@ -1,6 +1,7 @@
 package application.services;
 
 import application.ports.IUserRepository;
+import application.util.HashUtil;
 import domain.entities.User;
 
 public class AuthService {
@@ -17,7 +18,7 @@ public class AuthService {
             throw new Exception("Account does not exist.");
         }
 
-        String hashedPassword = infrastructure.security.HashUtil.generateSHA256(rawPassword);
+        String hashedPassword = HashUtil.generateSHA256(rawPassword);
 
         if (!user.getPassword().equals(hashedPassword)) {
             throw new Exception("Incorrect password.");
@@ -33,7 +34,7 @@ public class AuthService {
 
         String userId = java.util.UUID.randomUUID().toString();
 
-        String hashedPassword = infrastructure.security.HashUtil.generateSHA256(password);
+        String hashedPassword = HashUtil.generateSHA256(password);
 
         User newUser = new User(userId, username, hashedPassword);
 

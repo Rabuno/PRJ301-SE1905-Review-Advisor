@@ -1,8 +1,15 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-        <%@include file="../../common/header.jsp" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Merchant Dashboard - Review Advisor</title>
+        <%@include file="../../common/resources.jsp" %>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <%@include file="../../common/header.jsp" %>
 
             <div class="container mt-4 mb-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -146,3 +153,6 @@
             </script>
 
             <%@include file="../../common/footer.jsp" %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

@@ -1,5 +1,13 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Write Review - Review Advisor</title>
+        <%@include file="../../common/resources.jsp" %>
+    </head>
+    <body class="d-flex flex-column min-vh-100">
         <%@include file="../../common/header.jsp" %>
 
             <style>
@@ -129,3 +137,6 @@
             </div>
 
             <%@include file="../../common/footer.jsp" %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

@@ -1,5 +1,13 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Manage Properties - Merchant</title>
+        <%@include file="../../common/resources.jsp" %>
+    </head>
+    <body class="d-flex flex-column min-vh-100">
         <%@include file="../../common/header.jsp" %>
 
             <div class="container mt-5 mb-5 flex-grow-1">
@@ -44,10 +52,10 @@
                                             class="text-danger">*</span></label>
                                     <select name="category" class="form-select" required>
                                         <option value="" disabled selected>Select a category...</option>
-                                        <option value="Accommodation">Accommodation</option>
-                                        <option value="Dining">Dining</option>
-                                        <option value="Attraction">Attraction</option>
-                                        <option value="Transport">Transport</option>
+                                        <option value="Hotels">Hotels</option>
+                                        <option value="Restaurants">Restaurants</option>
+                                        <option value="Attractions">Attractions</option>
+                                        <option value="Cafes">Cafes</option>
                                     </select>
                                 </div>
 
@@ -79,6 +87,63 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="row justify-content-center mt-4">
+                    <div class="col-md-10">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white fw-bold">
+                                My Properties
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="ps-3">ID</th>
+                                                <th>Name</th>
+                                                <th>Category</th>
+                                                <th>Status</th>
+                                                <th class="text-end pe-3">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:choose>
+                                                <c:when test="${not empty requestScope.MERCHANT_PRODUCTS}">
+                                                    <c:forEach var="p" items="${requestScope.MERCHANT_PRODUCTS}">
+                                                        <tr>
+                                                            <td class="ps-3"><span class="badge bg-secondary">${p.productId}</span></td>
+                                                            <td class="fw-bold">${p.name}</td>
+                                                            <td>${p.category}</td>
+                                                            <td>
+                                                                <span class="badge bg-light text-dark border">${p.status}</span>
+                                                            </td>
+                                                            <td class="text-end pe-3">
+                                                                <a class="btn btn-sm btn-outline-primary"
+                                                                   href="${pageContext.request.contextPath}/MerchantServlet?action=EditProperty&id=${p.productId}">
+                                                                    <i class="bi bi-pencil-square"></i> Edit
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </c:forEach>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <tr>
+                                                        <td colspan="5" class="text-center text-muted py-4">
+                                                            No properties yet.
+                                                        </td>
+                                                    </tr>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <%@include file="../../common/footer.jsp" %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

@@ -1,7 +1,6 @@
 package adapters.controllers;
 
 import application.services.AuthService;
-import infrastructure.persistence.SqlUserDAO;
 
 import java.io.IOException;
 import javax.servlet.ServletException;
@@ -15,7 +14,10 @@ public class RegisterServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        this.authService = new AuthService(new SqlUserDAO());
+        this.authService = (AuthService) getServletContext().getAttribute("AuthService");
+        if (this.authService == null) {
+            throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
+        }
     }
 
     @Override

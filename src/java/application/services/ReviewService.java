@@ -122,4 +122,9 @@ public class ReviewService {
     public List<application.dto.AlertDashboardDTO> getFlaggedReviewsForDashboard() {
         return reviewRepository.getFlaggedReviewsWithAlerts();
     }
+
+    // Used by moderation UI to show full evidence pack (reasons/evidences) for a review.
+    public Alert getAlertByReviewId(String reviewId) {
+        return alertRepository.findByReviewId(reviewId);
+    }
 }

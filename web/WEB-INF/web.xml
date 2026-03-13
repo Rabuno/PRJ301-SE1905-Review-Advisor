@@ -12,6 +12,10 @@
         <servlet-class>adapters.controllers.LoginServlet</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>RegisterServlet</servlet-name>
+        <servlet-class>adapters.controllers.RegisterServlet</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>LogoutController</servlet-name>
         <servlet-class>adapters.controllers.LogoutController</servlet-class>
     </servlet>
@@ -22,6 +26,10 @@
     <servlet>
         <servlet-name>ModeratorServlet</servlet-name>
         <servlet-class>adapters.controllers.ModeratorServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>MerchantServlet</servlet-name>
+        <servlet-class>adapters.controllers.MerchantServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>RolePermissionServlet</servlet-name>
@@ -41,6 +49,10 @@
         <url-pattern>/LoginServlet</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
+        <servlet-name>RegisterServlet</servlet-name>
+        <url-pattern>/RegisterServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
         <servlet-name>LogoutController</servlet-name>
         <url-pattern>/LogoutController</url-pattern>
     </servlet-mapping>
@@ -53,6 +65,10 @@
         <url-pattern>/ModeratorServlet</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
+        <servlet-name>MerchantServlet</servlet-name>
+        <url-pattern>/MerchantServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
         <servlet-name>RolePermissionServlet</servlet-name>
         <url-pattern>/Admin/RolePermissions</url-pattern>
     </servlet-mapping>
@@ -61,9 +77,25 @@
         <url-pattern>/Admin/UserRoles</url-pattern>
     </servlet-mapping>
 
+    <filter>
+        <filter-name>RoleFilter</filter-name>
+        <filter-class>infrastructure.security.RoleFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>RoleFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
+
+    <listener>
+        <listener-class>infrastructure.persistence.DatabaseInitListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>infrastructure.config.AppConfigListener</listener-class>
+    </listener>
 
     <welcome-file-list>
         <welcome-file>login.jsp</welcome-file>

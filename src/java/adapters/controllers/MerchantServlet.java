@@ -65,8 +65,30 @@ public class MerchantServlet extends HttpServlet {
 
         try {
             if ("ManageProperties".equals(action)) {
-                // Hien thi form them moi (manage-properties.jsp quay ve ban goc)
+                // Manage Properties: list + create form
+                List<Product> myProducts = productService.getProductsByMerchant(merchantId);
+                request.setAttribute("MERCHANT_PRODUCTS", myProducts);
                 request.getRequestDispatcher("/views/merchant/manage-properties.jsp").forward(request, response);
+
+            } else if ("EditProperty".equals(action)) {
+                String productId = request.getParameter("id");
+                // Find within merchant's inventory to include non-ACTIVE statuses.
+                Product target = null;
+                List<Product> myProducts = productService.getProductsByMerchant(merchantId);
+                for (Product p : myProducts) {
+                    if (p != null && p.getProductId() != null && p.getProductId().equals(productId)) {
+                        target = p;
+                        break;
+                    }
+                }
+                if (target == null) {
+                    request.setAttribute("ERROR_MSG", "Product not found or not owned by merchant.");
+                    request.setAttribute("MERCHANT_PRODUCTS", myProducts);
+                    request.getRequestDispatcher("/views/merchant/manage-properties.jsp").forward(request, response);
+                    return;
+                }
+                request.setAttribute("PRODUCT", target);
+                request.getRequestDispatcher("/views/merchant/edit-product.jsp").forward(request, response);
 
             } else {
                 // Default: Merchant Dashboard

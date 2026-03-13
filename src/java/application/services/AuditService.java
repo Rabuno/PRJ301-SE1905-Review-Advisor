@@ -2,7 +2,7 @@ package application.services;
 
 import application.ports.IAuditRepository;
 import domain.entities.AuditLog;
-import infrastructure.security.HashUtil;
+import application.util.HashUtil;
 import java.util.UUID;
 
 public class AuditService {

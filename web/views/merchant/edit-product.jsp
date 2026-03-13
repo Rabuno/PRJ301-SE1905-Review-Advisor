@@ -1,5 +1,13 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Edit Property - Merchant</title>
+        <%@include file="../../common/resources.jsp" %>
+    </head>
+    <body class="d-flex flex-column min-vh-100">
         <%@include file="../../common/header.jsp" %>
 
             <div class="container mt-5 mb-5 flex-grow-1">
@@ -23,13 +31,14 @@
                             </c:if>
 
                             <c:if test="${not empty requestScope.PRODUCT}">
-                                <%-- Hiển thị ảnh hiện tại --%>
-                                    <div class="mb-3 text-center">
-                                        <img src="${not empty requestScope.PRODUCT.imageUrl ? requestScope.PRODUCT.imageUrl : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop'}"
-                                            alt="Current Photo" class="img-fluid rounded shadow-sm"
-                                            style="max-height: 200px; object-fit: cover; width: 100%;">
-                                        <p class="text-muted small mt-1">Current product image</p>
-                                    </div>
+                                <div class="mb-3 text-center">
+                                    <c:set var="img" value="${requestScope.PRODUCT.imageUrl}"/>
+                                    <img src="${empty img ? pageContext.request.contextPath.concat('/assets/default/default.jpg') : (img.startsWith(pageContext.request.contextPath) ? img : pageContext.request.contextPath.concat(img.startsWith('/') ? '' : '/').concat(img))}"
+                                         alt="Current Photo" class="img-fluid rounded shadow-sm"
+                                         style="max-height: 200px; object-fit: cover; width: 100%;"
+                                         onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/default/default.jpg';">
+                                    <p class="text-muted small mt-1">Current product image</p>
+                                </div>
                             </c:if>
 
                             <form action="${pageContext.request.contextPath}/MerchantServlet" method="POST"
@@ -40,7 +49,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Property Name <span
                                             class="text-danger">*</span></label>
-                                    <input type="text" name="propertyName" class="form-control"
+                                    <input type="text" name="name" class="form-control"
                                         value="${requestScope.PRODUCT.name}" required>
                                 </div>
 
@@ -48,14 +57,25 @@
                                     <label class="form-label fw-bold">Category <span
                                             class="text-danger">*</span></label>
                                     <select name="category" class="form-select" required>
-                                        <option value="Hotel" ${requestScope.PRODUCT.category=='Hotel' ? 'selected' : ''
-                                            }>Hotel</option>
-                                        <option value="Resort" ${requestScope.PRODUCT.category=='Resort' ? 'selected'
-                                            : '' }>Resort</option>
-                                        <option value="Restaurant" ${requestScope.PRODUCT.category=='Restaurant'
-                                            ? 'selected' : '' }>Restaurant</option>
-                                        <option value="Attraction" ${requestScope.PRODUCT.category=='Attraction'
-                                            ? 'selected' : '' }>Attraction</option>
+                                        <option value="Hotels" ${requestScope.PRODUCT.category=='Hotels' ? 'selected' : ''}>Hotels</option>
+                                        <option value="Restaurants" ${requestScope.PRODUCT.category=='Restaurants' ? 'selected' : ''}>Restaurants</option>
+                                        <option value="Attractions" ${requestScope.PRODUCT.category=='Attractions' ? 'selected' : ''}>Attractions</option>
+                                        <option value="Cafes" ${requestScope.PRODUCT.category=='Cafes' ? 'selected' : ''}>Cafes</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Price (VND)</label>
+                                    <input type="number" name="price" class="form-control" min="0" step="1000"
+                                           value="${requestScope.PRODUCT.price}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Status</label>
+                                    <select name="status" class="form-select">
+                                        <option value="ACTIVE" ${requestScope.PRODUCT.status=='ACTIVE' ? 'selected' : ''}>ACTIVE</option>
+                                        <option value="PENDING" ${requestScope.PRODUCT.status=='PENDING' ? 'selected' : ''}>PENDING</option>
+                                        <option value="DEACTIVATED" ${requestScope.PRODUCT.status=='DEACTIVATED' ? 'selected' : ''}>DEACTIVATED</option>
                                     </select>
                                 </div>
 
@@ -63,7 +83,7 @@
                                     <label class="form-label fw-bold">
                                         <i class="bi bi-image text-success"></i> Change Product Image
                                     </label>
-                                    <input type="file" name="productImage" class="form-control" accept="image/*">
+                                    <input type="file" name="image" class="form-control" accept="image/*">
                                     <small class="text-muted">
                                         Leave empty to keep the current image. Accepted: JPG, PNG, GIF (max 10MB).
                                     </small>
@@ -86,3 +106,6 @@
             </div>
 
             <%@include file="../../common/footer.jsp" %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

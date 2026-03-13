@@ -4,8 +4,6 @@ import application.ports.IRoleRepository;
 import application.ports.IUserRepository;
 import domain.entities.Role;
 import domain.entities.User;
-import infrastructure.persistence.SqlRoleDAO;
-import infrastructure.persistence.SqlUserDAO;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,8 +23,11 @@ public class UserRoleServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        this.userRepository = new SqlUserDAO();
-        this.roleRepository = new SqlRoleDAO();
+        this.userRepository = (IUserRepository) getServletContext().getAttribute("UserRepository");
+        this.roleRepository = (IRoleRepository) getServletContext().getAttribute("RoleRepository");
+        if (this.userRepository == null || this.roleRepository == null) {
+            throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
+        }
     }
 
     @Override
@@ -41,7 +42,7 @@ public class UserRoleServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!user.getRoleId().equals("5") && !user.hasPermission("PERM_AI_RETRAIN")) {
+        if (!"ADMIN".equals(user.getRole()) && !user.hasPermission("PERM_AI_RETRAIN")) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }
@@ -67,7 +68,7 @@ public class UserRoleServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!user.getRoleId().equals("5") && !user.hasPermission("PERM_AI_RETRAIN")) {
+        if (!"ADMIN".equals(user.getRole()) && !user.hasPermission("PERM_AI_RETRAIN")) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }

@@ -33,7 +33,7 @@ public class SqlProductDAO implements IProductRepository {
     public List<Product> findAll() {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
-                + "FROM Products WHERE status != 'DEACTIVATED'";
+                + "FROM Products WHERE status = 'ACTIVE'";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -88,7 +88,7 @@ public class SqlProductDAO implements IProductRepository {
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
                 + "FROM Products "
                 + "WHERE product_id = ? "
-                + "AND status != 'DEACTIVATED'";
+                + "AND status = 'ACTIVE'";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, productId);
@@ -110,7 +110,7 @@ public class SqlProductDAO implements IProductRepository {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
                 + "FROM Products "
-                + "WHERE status != 'DEACTIVATED' "
+                + "WHERE status = 'ACTIVE' "
                 + "AND (name LIKE ? OR category LIKE ? OR description LIKE ?) "
                 + "ORDER BY created_at DESC";
 
@@ -199,7 +199,7 @@ public class SqlProductDAO implements IProductRepository {
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
                 + "FROM Products "
                 + "WHERE LOWER(category) = LOWER(?) "
-                + "AND status != 'DEACTIVATED' "
+                + "AND status = 'ACTIVE' "
                 + "ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {

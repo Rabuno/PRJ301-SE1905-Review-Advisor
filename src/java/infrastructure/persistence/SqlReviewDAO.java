@@ -60,7 +60,7 @@ public class SqlReviewDAO implements IReviewRepository {
             Timestamp timestamp = (review.getCreatedAt() != null)
                     ? Timestamp.valueOf(review.getCreatedAt())
                     : new Timestamp(System.currentTimeMillis());
-            ps.setTimestamp(7, timestamp);
+            ps.setTimestamp(8, timestamp);
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0; // Trả về boolean cho ReviewService
 
@@ -72,8 +72,8 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public boolean saveReviewWithAlert(Review review, domain.entities.Alert alert) {
-        String updateRev = "UPDATE Reviews SET rating=?, content=?, status=?, updated_at=GETDATE() WHERE review_id=?";
-        String insertRev = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String updateRev = "UPDATE Reviews SET rating=?, content=?, status=?, image_url=?, updated_at=GETDATE() WHERE review_id=?";
+        String insertRev = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try ( java.sql.Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false); // Bắt đầu Transaction
@@ -84,7 +84,8 @@ public class SqlReviewDAO implements IReviewRepository {
                     psUp.setInt(1, review.getRating());
                     psUp.setString(2, review.getContent());
                     psUp.setString(3, review.getStatus().name());
-                    psUp.setString(4, review.getReviewId());
+                    psUp.setString(4, review.getImageUrl());
+                    psUp.setString(5, review.getReviewId());
                     if (psUp.executeUpdate() > 0) {
                         isUpdated = true;
                     }
@@ -97,7 +98,8 @@ public class SqlReviewDAO implements IReviewRepository {
                         psIn.setInt(4, review.getRating());
                         psIn.setString(5, review.getContent());
                         psIn.setString(6, review.getStatus().name());
-                        psIn.setTimestamp(7, review.getCreatedAt() != null ? java.sql.Timestamp.valueOf(review.getCreatedAt()) : new java.sql.Timestamp(System.currentTimeMillis()));
+                        psIn.setString(7, review.getImageUrl());
+                        psIn.setTimestamp(8, review.getCreatedAt() != null ? java.sql.Timestamp.valueOf(review.getCreatedAt()) : new java.sql.Timestamp(System.currentTimeMillis()));
                         psIn.executeUpdate();
                     }
                 }

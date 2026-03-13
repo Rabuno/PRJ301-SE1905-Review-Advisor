@@ -12,7 +12,6 @@ IF OBJECT_ID('Reviews', 'U') IS NOT NULL DROP TABLE Reviews;
 IF OBJECT_ID('Products', 'U') IS NOT NULL DROP TABLE Products;
 IF OBJECT_ID('AuditLog', 'U') IS NOT NULL DROP TABLE AuditLog;
 IF OBJECT_ID('RolePerm', 'U') IS NOT NULL DROP TABLE RolePerm;
-IF OBJECT_ID('UserRole', 'U') IS NOT NULL DROP TABLE UserRole;
 IF OBJECT_ID('Users', 'U') IS NOT NULL DROP TABLE Users;
 IF OBJECT_ID('Permissions', 'U') IS NOT NULL DROP TABLE Permissions;
 IF OBJECT_ID('Roles', 'U') IS NOT NULL DROP TABLE Roles;
@@ -92,7 +91,8 @@ CREATE TABLE AuditLog (
     diff_json NVARCHAR(MAX), 
     previous_hash VARCHAR(64) NOT NULL, 
     current_hash VARCHAR(64) NOT NULL, 
-    timestamp DATETIME DEFAULT GETDATE()
+    timestamp DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (actor_user_id) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Alerts (
@@ -101,7 +101,8 @@ CREATE TABLE Alerts (
     risk_score DECIMAL(5,4) NOT NULL, 
     status VARCHAR(20) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'RESOLVED', 'DISMISSED')),
     created_at DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (review_id) REFERENCES Reviews(review_id) ON DELETE CASCADE
+    FOREIGN KEY (review_id) REFERENCES Reviews(review_id) ON DELETE CASCADE,
+    CONSTRAINT UQ_Alerts_Review UNIQUE (review_id)
 );
 
 CREATE TABLE AlertReasons (
@@ -149,6 +150,7 @@ INSERT INTO RolePerm (role_id, permission_id) SELECT r.role_id, p.permission_id 
 
 -- Dữ liệu người dùng
 INSERT INTO Users (user_id, username, password, role_id, created_at) VALUES 
+('SYSTEM', 'system', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'ADMIN'), GETDATE()), 
 ('U_ADMIN', 'admin', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'ADMIN'), GETDATE()), 
 ('U_MOD', 'moderator', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'MODERATOR'), GETDATE()), 
 ('U_MERCH1', 'marriott_hn', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', (SELECT role_id FROM Roles WHERE role_name = 'MERCHANT'), DATEADD(day, -300, GETDATE())), 
@@ -159,17 +161,24 @@ INSERT INTO Users (user_id, username, password, role_id, created_at) VALUES
 
 -- Cơ sở dịch vụ
 INSERT INTO Products (product_id, name, category, description, price, merchant_id, image_url, status) VALUES
-('P_PROP1', N'JW Marriott Hotel Hanoi', N'Accommodation', N'Khách sạn 5 sao sang trọng với thiết kế lấy cảm hứng từ con rồng huyền thoại.', 4500000, 'U_MERCH1', '/assets/uploads/marriott_hn.jpg', 'ACTIVE'),
-('P_PROP2', N'French Grill - JW Marriott', N'Dining', N'Nhà hàng Pháp cao cấp, phục vụ bò Wagyu và hải sản nhập khẩu.', 2000000, 'U_MERCH1', '/assets/uploads/french_grill.jpg', 'ACTIVE'),
-('P_PROP3', N'Pizza 4P''s Tràng Tiền', N'Dining', N'Pizza kiểu Nhật kết hợp Ý, nổi tiếng với phô mai Burrata tự làm.', 350000, 'U_MERCH2', '/assets/uploads/pizza_4ps.jpg', 'ACTIVE');
+('P_PROP1', N'JW Marriott Hotel Hanoi', N'Hotels', N'Khách sạn 5 sao sang trọng với thiết kế lấy cảm hứng từ con rồng huyền thoại.', 4500000, 'U_MERCH1', '/assets/uploads/p_01.jpg', 'ACTIVE'),
+('P_PROP2', N'French Grill - JW Marriott', N'Restaurants', N'Nhà hàng Pháp cao cấp, phục vụ bò Wagyu và hải sản nhập khẩu.', 2000000, 'U_MERCH1', '/assets/uploads/french_grill.jpg', 'ACTIVE'),
+('P_PROP3', N'Pizza 4P''s Tràng Tiền', N'Restaurants', N'Pizza kiểu Nhật kết hợp Ý, nổi tiếng với phô mai Burrata tự làm.', 350000, 'U_MERCH2', '/assets/uploads/p_02.jpg', 'ACTIVE'),
+('P_PROP4', N'Hanoi Old Quarter Walking Tour', N'Attractions', N'Tour đi bộ khám phá phố cổ Hà Nội, ẩm thực đường phố và lịch sử địa phương.', 250000, 'U_MERCH1', '/assets/uploads/missing_file_should_fallback.jpg', 'ACTIVE'),
+('P_PROP5', N'Corner Cafe & Bakery', N'Cafes', N'Cà phê rang xay, bánh ngọt thủ công, không gian yên tĩnh để làm việc.', 80000, 'U_MERCH2', NULL, 'ACTIVE'),
+('P_PROP6', N'Hidden Draft Listing', N'Hotels', N'Listing ở trạng thái PENDING để test luồng duyệt sản phẩm.', 1200000, 'U_MERCH1', NULL, 'PENDING'),
+('P_PROP7', N'Deactivated Listing', N'Restaurants', N'Không nên xuất hiện trên trang public.', 120000, 'U_MERCH2', NULL, 'DEACTIVATED');
 
 -- Đánh giá
 INSERT INTO Reviews (review_id, product_id, user_id, rating, content, image_url, status, created_at) VALUES 
 ('R_001', 'P_PROP1', 'U_CUST1', 5, N'Phòng ốc cực kỳ sạch sẽ và tiện nghi. Hồ bơi view kính rất đẹp. Sẽ quay lại!', '/assets/uploads/r001_pool.jpg', 'PUBLISHED', DATEADD(day, -10, GETDATE())),
 ('R_002', 'P_PROP1', 'U_CUST2', 1, N'Khách sạn thái độ phục vụ lồi lõm, có gián trong phòng. Nhận đặt phòng giá rẻ các ks 5 sao chiết khấu 40% qua Zalo 09xx.', NULL, 'FLAGGED', DATEADD(day, -1, GETDATE())),
-('R_003', 'P_PROP3', 'U_CUST3', 4, N'Pizza ngon, không gian ấm cúng nhưng phải đặt bàn trước khá lâu.', '/assets/uploads/r003_pizza.jpg', 'PUBLISHED', DATEADD(day, -5, GETDATE())),
+('R_003', 'P_PROP3', 'U_CUST3', 4, N'Pizza ngon, không gian ấm cúng nhưng phải đặt bàn trước khá lâu.', '/assets/uploads/r_01.jpg', 'PUBLISHED', DATEADD(day, -5, GETDATE())),
 ('R_004', 'P_PROP2', 'U_CUST2', 5, N'Tuyển CTV review nhà hàng/khách sạn, ngồi nhà lướt app kiếm 500k/ngày, cọc trước 100k.', NULL, 'FLAGGED', DATEADD(hour, -2, GETDATE())),
-('R_005', 'P_PROP1', 'U_CUST3', 3, N'Cách âm giữa các phòng chưa thực sự tốt, giá buffet sáng hơi cao.', NULL, 'HIDDEN', DATEADD(day, -20, GETDATE()));
+('R_005', 'P_PROP1', 'U_CUST3', 3, N'Cách âm giữa các phòng chưa thực sự tốt, giá buffet sáng hơi cao.', NULL, 'HIDDEN', DATEADD(day, -20, GETDATE())),
+('R_006', 'P_PROP4', 'U_CUST1', 5, N'Tour rất hay!!! Hướng dẫn viên nhiệt tình. Recommend!', NULL, 'PUBLISHED', DATEADD(day, -3, GETDATE())),
+('R_007', 'P_PROP5', 'U_CUST2', 2, N'Buy now!!! Discount 50%!!! Visit www.example.com', NULL, 'FLAGGED', DATEADD(hour, -1, GETDATE())),
+('R_008', 'P_PROP5', 'U_CUST3', 1, N'This place is fucking terrible.', NULL, 'FLAGGED', DATEADD(hour, -6, GETDATE()));
 
 -- Cảnh báo XAI
 INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_001', 'R_002', 0.8950, 'OPEN');
@@ -187,6 +196,27 @@ INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value
 ('ALT_002', 'ACCOUNT_AGE', 2.0, 30.0),
 ('ALT_002', 'BURST_RATE', 8.0, 5.0); 
 
+INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_003', 'R_007', 0.8800, 'OPEN');
+INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES
+('ALT_003', 'external_link', 0.4500, N'Chứa đường dẫn/quảng cáo (spam).'),
+('ALT_003', 'spam_keyword', 0.2500, N'Từ khóa quảng cáo/câu kéo.');
+
+INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_004', 'R_008', 0.9100, 'OPEN');
+INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES
+('ALT_004', 'profanity', 0.6000, N'Ngôn từ thô tục/vi phạm tiêu chuẩn cộng đồng.');
+
 INSERT INTO AuditLog (audit_id, actor_user_id, action, diff_json, previous_hash, current_hash) VALUES 
 ('GENESIS_001', 'SYSTEM', 'SYSTEM_INIT', '{}', '0000000000000000000000000000000000000000000000000000000000000000', '1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f');
+
+-- 4. INDEXES (Performance)
+CREATE INDEX IX_Users_RoleId ON Users(role_id);
+CREATE INDEX IX_Products_Status_Created ON Products(status, created_at);
+CREATE INDEX IX_Products_Category_Status ON Products(category, status);
+CREATE INDEX IX_Products_Merchant_Created ON Products(merchant_id, created_at);
+CREATE INDEX IX_Reviews_Product_Status_Created ON Reviews(product_id, status, created_at);
+CREATE INDEX IX_Reviews_User_Created ON Reviews(user_id, created_at);
+CREATE INDEX IX_Alerts_Status_Created ON Alerts(status, created_at);
+CREATE INDEX IX_AlertReasons_AlertId ON AlertReasons(alert_id);
+CREATE INDEX IX_AlertEvidences_AlertId ON AlertEvidences(alert_id);
+CREATE INDEX IX_AuditLog_Actor_Timestamp ON AuditLog(actor_user_id, timestamp);
 GO
