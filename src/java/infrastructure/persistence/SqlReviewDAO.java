@@ -17,10 +17,9 @@ public class SqlReviewDAO implements IReviewRepository {
         // Kiểm tra xem review đã tồn tại chưa (Edit mode)
         boolean isUpdate = false;
         String checkSql = "SELECT 1 FROM Reviews WHERE review_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
             checkPs.setString(1, review.getReviewId());
-            try (ResultSet rs = checkPs.executeQuery()) {
+            try ( ResultSet rs = checkPs.executeQuery()) {
                 if (rs.next()) {
                     isUpdate = true;
                 }
@@ -31,8 +30,7 @@ public class SqlReviewDAO implements IReviewRepository {
 
         if (isUpdate) {
             String updateSql = "UPDATE Reviews SET rating = ?, content = ?, status = ?, updated_at = GETDATE() WHERE review_id = ?";
-            try (Connection conn = DBConnection.getConnection();
-                    PreparedStatement ps = conn.prepareStatement(updateSql)) {
+            try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setInt(1, review.getRating());
                 ps.setString(2, review.getContent());
                 ps.setString(3, review.getStatus().name());
@@ -47,7 +45,7 @@ public class SqlReviewDAO implements IReviewRepository {
         // Tạo mới (Write mode)
         String sql = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, review.getReviewId());
             ps.setString(2, review.getProductId());
@@ -71,14 +69,72 @@ public class SqlReviewDAO implements IReviewRepository {
     }
 
     @Override
+    public boolean saveReviewWithAlert(Review review, domain.entities.Alert alert) {
+        String updateRev = "UPDATE Reviews SET rating=?, content=?, status=?, updated_at=GETDATE() WHERE review_id=?";
+        String insertRev = "INSERT INTO Reviews (review_id, product_id, user_id, rating, content, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try ( java.sql.Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false); // Bắt đầu Transaction
+            try {
+                // 1. Logic Upsert Review (Tối ưu kết nối)
+                boolean isUpdated = false;
+                try ( java.sql.PreparedStatement psUp = conn.prepareStatement(updateRev)) {
+                    psUp.setInt(1, review.getRating());
+                    psUp.setString(2, review.getContent());
+                    psUp.setString(3, review.getStatus().name());
+                    psUp.setString(4, review.getReviewId());
+                    if (psUp.executeUpdate() > 0) {
+                        isUpdated = true;
+                    }
+                }
+                if (!isUpdated) {
+                    try ( java.sql.PreparedStatement psIn = conn.prepareStatement(insertRev)) {
+                        psIn.setString(1, review.getReviewId());
+                        psIn.setString(2, review.getProductId());
+                        psIn.setString(3, review.getUserId());
+                        psIn.setInt(4, review.getRating());
+                        psIn.setString(5, review.getContent());
+                        psIn.setString(6, review.getStatus().name());
+                        psIn.setTimestamp(7, review.getCreatedAt() != null ? java.sql.Timestamp.valueOf(review.getCreatedAt()) : new java.sql.Timestamp(System.currentTimeMillis()));
+                        psIn.executeUpdate();
+                    }
+                }
+
+                // 2. Logic Insert Alert (Chung Connection)
+                if (alert != null) {
+                    String insertAlert = "INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES (?, ?, ?, ?)";
+                    try ( java.sql.PreparedStatement psA = conn.prepareStatement(insertAlert)) {
+                        psA.setString(1, alert.getAlertId());
+                        psA.setString(2, alert.getReviewId());
+                        psA.setDouble(3, alert.getRiskScore());
+                        psA.setString(4, alert.getStatus());
+                        psA.executeUpdate();
+                    }
+                    // Bỏ qua mã chèn AlertReasons và AlertEvidences bằng executeBatch ở đây để ngắn gọn, 
+                    // nhưng áp dụng tương tự quy trình trong SqlAlertDAO.
+                }
+
+                conn.commit(); // Xác nhận Transaction
+                return true;
+            } catch (Exception ex) {
+                conn.rollback(); // Hoàn tác nếu có lỗi bất kỳ
+                ex.printStackTrace();
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
     public List<Review> findByStatus(ReviewStatus status) {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM Reviews WHERE status = ? ORDER BY created_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, status.name());
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(
                             rs.getString("review_id"),
@@ -100,8 +156,7 @@ public class SqlReviewDAO implements IReviewRepository {
     @Override
     public void updateStatus(String reviewId, ReviewStatus newStatus) {
         String sql = "UPDATE Reviews SET status = ?, updated_at = GETDATE() WHERE review_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, newStatus.name());
             ps.setString(2, reviewId);
@@ -122,10 +177,10 @@ public class SqlReviewDAO implements IReviewRepository {
     @Override
     public Review findById(String reviewId) {
         String sql = "SELECT * FROM Reviews WHERE review_id = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, reviewId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new Review(
                             rs.getString("review_id"),
@@ -160,10 +215,10 @@ public class SqlReviewDAO implements IReviewRepository {
                 + "WHERE JSON_VALUE(diff_json, '$.reviewId') = ? "
                 + "ORDER BY [timestamp] DESC";
 
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, reviewId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String rId = rs.getString("review_id");
                     if (rId != null) {
@@ -189,11 +244,10 @@ public class SqlReviewDAO implements IReviewRepository {
         List<Review> list = new ArrayList<>();
         // Chỉ lấy các review đã được PUBLISHED cho user xem
         String sql = "SELECT * FROM Reviews WHERE product_id = ? AND status = 'PUBLISHED' ORDER BY created_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, productId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(
                             rs.getString("review_id"),
@@ -216,10 +270,10 @@ public class SqlReviewDAO implements IReviewRepository {
     public List<Review> findByUserId(String userId) {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM Reviews WHERE user_id = ? AND status != 'HIDDEN' ORDER BY created_at DESC";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Review r = new Review(
                             rs.getString("review_id"),
@@ -240,48 +294,46 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public Object[] getReviewStatsByMerchant(String merchantId) {
-        String sql = "SELECT " +
-                "  AVG(CAST(r.rating AS FLOAT)) as avg_rating, " +
-                "  SUM(CASE WHEN r.status = 'PUBLISHED' THEN 1 ELSE 0 END) as published_count, " +
-                "  SUM(CASE WHEN r.status = 'FLAGGED' THEN 1 ELSE 0 END) as flagged_count " +
-                "FROM Reviews r " +
-                "JOIN Products p ON r.product_id = p.product_id " +
-                "WHERE p.merchant_id = ?";
+        String sql = "SELECT "
+                + "  AVG(CAST(r.rating AS FLOAT)) as avg_rating, "
+                + "  SUM(CASE WHEN r.status = 'PUBLISHED' THEN 1 ELSE 0 END) as published_count, "
+                + "  SUM(CASE WHEN r.status = 'FLAGGED' THEN 1 ELSE 0 END) as flagged_count "
+                + "FROM Reviews r "
+                + "JOIN Products p ON r.product_id = p.product_id "
+                + "WHERE p.merchant_id = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, merchantId);
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     double avgRating = rs.getDouble("avg_rating");
                     int publishedCount = rs.getInt("published_count");
                     int flaggedCount = rs.getInt("flagged_count");
                     // Format to 1 decimal place if needed, but double is fine
-                    return new Object[] { avgRating, publishedCount, flaggedCount };
+                    return new Object[]{avgRating, publishedCount, flaggedCount};
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new Object[] { 0.0, 0, 0 };
+        return new Object[]{0.0, 0, 0};
     }
 
     @Override
     public List<Review> getRecentReviewsByMerchant(String merchantId, int limit) {
         List<Review> list = new ArrayList<>();
-        String sql = "SELECT TOP (?) r.* FROM Reviews r " +
-                "JOIN Products p ON r.product_id = p.product_id " +
-                "WHERE p.merchant_id = ? " +
-                "ORDER BY r.created_at DESC";
+        String sql = "SELECT TOP (?) r.* FROM Reviews r "
+                + "JOIN Products p ON r.product_id = p.product_id "
+                + "WHERE p.merchant_id = ? "
+                + "ORDER BY r.created_at DESC";
 
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, limit);
             ps.setString(2, merchantId);
 
-            try (ResultSet rs = ps.executeQuery()) {
+            try ( ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new Review(
                             rs.getString("review_id"),
@@ -306,13 +358,12 @@ public class SqlReviewDAO implements IReviewRepository {
         String sql = "SELECT COUNT(*) AS total_reviews FROM Reviews "
                 + "WHERE user_id = ? AND created_at >= DATEADD(hour, -?, GETDATE())";
 
-        try (java.sql.Connection conn = DBConnection.getConnection();
-                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
             ps.setInt(2, hours);
 
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
+            try ( java.sql.ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     count = rs.getInt("total_reviews");
                 }
@@ -326,99 +377,72 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts() {
-        List<application.dto.AlertDashboardDTO> list = new ArrayList<>();
+        java.util.Map<String, application.dto.AlertDashboardDTO> dtoMap = new java.util.LinkedHashMap<>();
 
-        // Truy vấn lõi kết hợp Reviews và Alerts
+        // Truy vấn phẳng 1 lần duy nhất bằng LEFT JOIN
         String sql = "SELECT r.review_id, r.content, r.rating, r.created_at, "
-                + "a.risk_score "
+                + "a.alert_id, a.risk_score, "
+                + "ar.feature_name, ar.importance_weight, "
+                + "ae.rule_type, ae.measured_value "
                 + "FROM Reviews r "
                 + "LEFT JOIN Alerts a ON r.review_id = a.review_id "
-                + "WHERE r.status = 'FLAGGED' ORDER BY r.created_at DESC";
+                + "LEFT JOIN AlertReasons ar ON a.alert_id = ar.alert_id "
+                + "LEFT JOIN AlertEvidences ae ON a.alert_id = ae.alert_id "
+                + "WHERE r.status = 'FLAGGED' "
+                + "ORDER BY r.created_at DESC";
 
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
+        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql);  java.sql.ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                application.dto.AlertDashboardDTO dto = new application.dto.AlertDashboardDTO();
                 String reviewId = rs.getString("review_id");
+                application.dto.AlertDashboardDTO dto = dtoMap.get(reviewId);
 
-                dto.setReviewId(reviewId);
-                dto.setContent(rs.getString("content"));
-                dto.setRating(rs.getInt("rating"));
-                dto.setCreatedAt(rs.getTimestamp("created_at").toString());
+                // Khởi tạo DTO nếu chưa tồn tại trong Map
+                if (dto == null) {
+                    dto = new application.dto.AlertDashboardDTO();
+                    dto.setReviewId(reviewId);
+                    dto.setContent(rs.getString("content"));
+                    dto.setRating(rs.getInt("rating"));
+                    dto.setCreatedAt(rs.getTimestamp("created_at").toString());
 
-                // Xử lý Risk Score
-                double riskScore = rs.getDouble("risk_score");
-                if (!rs.wasNull()) {
-                    dto.setRiskScore(riskScore);
+                    double riskScore = rs.getDouble("risk_score");
+                    if (!rs.wasNull()) {
+                        dto.setRiskScore(riskScore);
+                    }
+                    dto.setEvidence(new java.util.HashMap<>());
+                    dto.setAiFeatures(new java.util.ArrayList<>());
+                    dtoMap.put(reviewId, dto);
                 }
 
-                // Ánh xạ phân cấp thông qua Helper Methods
-                dto.setEvidence(getEvidencesForReview(reviewId, conn));
-                dto.setAiFeatures(getReasonsForReview(reviewId, conn));
+                // Nhóm AlertReasons (tránh trùng lặp do tích Đề-các)
+                String featureName = rs.getString("feature_name");
+                if (featureName != null) {
+                    double weight = rs.getDouble("importance_weight");
+                    int score = (int) Math.round(weight * 100);
+                    boolean exists = dto.getAiFeatures().stream().anyMatch(f -> f.getName().equals(featureName));
+                    if (!exists) {
+                        dto.getAiFeatures().add(new application.dto.AlertDashboardDTO.AIFeatureDTO(featureName, score));
+                    }
+                }
 
-                list.add(dto);
+                // Nhóm AlertEvidences
+                String ruleType = rs.getString("rule_type");
+                if (ruleType != null) {
+                    double value = rs.getDouble("measured_value");
+                    String key = "BURST_RATE".equals(ruleType) ? "burstScore"
+                            : ("ACCOUNT_AGE".equals(ruleType) ? "accountAge" : ruleType.toLowerCase());
+                    dto.getEvidence().putIfAbsent(key, value);
+                }
             }
+
+            // Sắp xếp lại Feature theo độ quan trọng cho từng DTO
+            for (application.dto.AlertDashboardDTO dto : dtoMap.values()) {
+                dto.getAiFeatures().sort((f1, f2) -> Integer.compare(f2.getScore(), f1.getScore()));
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return list;
-    }
-
-    // Hàm phụ trợ 1: Ánh xạ cấu trúc AlertEvidences
-    private java.util.Map<String, Object> getEvidencesForReview(String reviewId, Connection conn)
-            throws java.sql.SQLException {
-        java.util.Map<String, Object> evidenceMap = new java.util.HashMap<>();
-        String sql = "SELECT ae.rule_type, ae.measured_value "
-                + "FROM AlertEvidences ae "
-                + "JOIN Alerts a ON ae.alert_id = a.alert_id "
-                + "WHERE a.review_id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, reviewId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String ruleType = rs.getString("rule_type");
-                    double value = rs.getDouble("measured_value");
-
-                    // Đồng bộ hóa Key với EL của giao diện dashboard.jsp
-                    if ("BURST_RATE".equals(ruleType)) {
-                        evidenceMap.put("burstScore", value);
-                    } else if ("ACCOUNT_AGE".equals(ruleType)) {
-                        evidenceMap.put("accountAge", value);
-                    } else {
-                        evidenceMap.put(ruleType.toLowerCase(), value); // Fallback định dạng
-                    }
-                }
-            }
-        }
-        return evidenceMap;
-    }
-
-    // Hàm phụ trợ 2: Ánh xạ cấu trúc AlertReasons
-    private List<application.dto.AlertDashboardDTO.AIFeatureDTO> getReasonsForReview(String reviewId, Connection conn)
-            throws java.sql.SQLException {
-        List<application.dto.AlertDashboardDTO.AIFeatureDTO> features = new ArrayList<>();
-        String sql = "SELECT ar.feature_name, ar.importance_weight "
-                + "FROM AlertReasons ar "
-                + "JOIN Alerts a ON ar.alert_id = a.alert_id "
-                + "WHERE a.review_id = ? "
-                + "ORDER BY ar.importance_weight DESC"; // Đẩy Feature quan trọng nhất lên đầu (Top-K)
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, reviewId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String featureName = rs.getString("feature_name");
-                    double weight = rs.getDouble("importance_weight");
-
-                    // Chuyển đổi Decimal (0.3840) sang dạng tỷ lệ phần trăm (38%)
-                    int score = (int) Math.round(weight * 100);
-                    features.add(new application.dto.AlertDashboardDTO.AIFeatureDTO(featureName, score));
-                }
-            }
-        }
-        return features;
+        return new java.util.ArrayList<>(dtoMap.values());
     }
 }

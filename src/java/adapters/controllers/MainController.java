@@ -1,60 +1,34 @@
 package adapters.controllers;
 
-import application.ports.IAlertRepository;
-import application.ports.IFileStoragePort;
-import application.ports.IProductRepository;
-import application.ports.IReviewRepository;
-import application.ports.IUserRepository;
+import application.dto.ProductReviewStatsDTO;
 import application.services.ProductService;
 import application.services.ReviewService;
-import application.services.TriageService;
 import domain.entities.Product;
 import domain.entities.Review;
 import domain.entities.User;
-import infrastructure.ai.WekaProvider;
-import infrastructure.persistence.SqlAlertDAO;
-import infrastructure.persistence.SqlProductDAO;
-import infrastructure.persistence.SqlReviewDAO;
-import infrastructure.persistence.SqlUserDAO;
-import infrastructure.storage.LocalFileStorageAdapter;
 
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 @WebServlet(name = "MainController", urlPatterns = {"/MainController"})
-public class MainController extends HttpServlet {
+public class MainController extends BaseServlet { // Kế thừa BaseServlet
 
     private ProductService productService;
     private ReviewService reviewService;
 
     @Override
     public void init() throws ServletException {
-        try {
-            IReviewRepository reviewDAO = new SqlReviewDAO();
-            IUserRepository userDAO = new SqlUserDAO();
-            IAlertRepository alertDAO = new SqlAlertDAO();
-            IProductRepository productDAO = new SqlProductDAO();
+        // Lấy các Singleton Service đã được AppConfigListener khởi tạo
+        this.reviewService = (ReviewService) getServletContext().getAttribute("ReviewService");
+        this.productService = (ProductService) getServletContext().getAttribute("ProductService");
 
-            // ĐIỂM CẬP NHẬT: Khởi tạo IFileStoragePort để khớp với ReviewService mới
-            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
-            IFileStoragePort storagePort = new LocalFileStorageAdapter(uploadDirPath);
-
-            // Định vị tệp Model Weka
-            String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
-            TriageService triageService = new TriageService(new WekaProvider(modelPath));
-
-            // Bổ sung tham số storagePort vào Constructor
-            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
-            this.productService = new ProductService(productDAO);
-
-        } catch (Exception t) {
-            throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + t.getMessage());
+        if (this.reviewService == null || this.productService == null) {
+            throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
         }
     }
 
@@ -66,35 +40,21 @@ public class MainController extends HttpServlet {
         try {
             if ("ViewDetail".equals(action)) {
                 String productId = request.getParameter("id");
-
                 Product product = productService.getProductById(productId);
                 List<Review> reviews = reviewService.getReviewsByProduct(productId);
 
                 if (product != null) {
-                    int totalReviews = 0;
-                    double averageRating = 0.0;
-                    int[] starCounts = new int[6]; // Index 1-5 đại diện cho 1-5 sao, index 0 bỏ qua
+                    ProductReviewStatsDTO stats = new ProductReviewStatsDTO(reviews);
 
-                    if (reviews != null && !reviews.isEmpty()) {
-                        totalReviews = reviews.size();
-                        double totalStars = 0;
-                        for (Review r : reviews) {
-                            totalStars += r.getRating();
-                            if (r.getRating() >= 1 && r.getRating() <= 5) {
-                                starCounts[r.getRating()]++;
-                            }
-                        }
-                        averageRating = totalStars / totalReviews;
-                    }
                     request.setAttribute("PRODUCT", product);
                     request.setAttribute("REVIEWS", reviews);
-                    request.setAttribute("TOTAL_REVIEWS", totalReviews);
-                    request.setAttribute("AVERAGE_RATING", String.format("%.1f", averageRating));
-                    request.setAttribute("STAR_COUNTS", starCounts);
-                    request.getRequestDispatcher("/views/customer/product-detail.jsp").forward(request, response);
+                    request.setAttribute("TOTAL_REVIEWS", stats.getTotalReviews());
+                    request.setAttribute("AVERAGE_RATING", stats.getAverageRatingFormatted());
+                    request.setAttribute("STAR_COUNTS", stats.getStarCounts());
+                    forwardToView(request, response, "/views/customer/product-detail.jsp"); // Sử dụng hàm từ BaseServlet
                 } else {
                     request.setAttribute("ERROR", "Product not found!");
-                    request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
+                    forwardToView(request, response, "/views/shared/error.jsp"); // Sử dụng hàm từ BaseServlet
                 }
             } else if ("MyReviews".equals(action)) {
                 HttpSession session = request.getSession();
@@ -102,33 +62,30 @@ public class MainController extends HttpServlet {
                 if (user != null) {
                     List<Review> myReviews = reviewService.getReviewsByUser(user.getUserId());
                     request.setAttribute("MY_REVIEWS", myReviews);
-                    request.getRequestDispatcher("/views/customer/my-reviews.jsp").forward(request, response);
+                    forwardToView(request, response, "/views/customer/my-reviews.jsp"); // Sử dụng hàm từ BaseServlet
                 } else {
-                    response.sendRedirect(request.getContextPath() + "/login.jsp");
+                    redirect(request, response, "/login.jsp"); // Sử dụng hàm từ BaseServlet
                 }
             } else if ("FilterByCategory".equals(action)) {
-                // Loc san pham theo danh muc
-                // UI: goi ?action=FilterByCategory&category=Hotel
                 String category = request.getParameter("category");
                 List<Product> products;
                 if (category != null && !category.trim().isEmpty()) {
                     products = productService.findByCategory(category.trim());
-                    request.setAttribute("ACTIVE_CATEGORY", category.trim()); // UI dung de highlight tab dang chon
+                    request.setAttribute("ACTIVE_CATEGORY", category.trim());
                 } else {
                     products = productService.getAllProducts();
                 }
                 request.setAttribute("PRODUCT_LIST", products);
-                request.getRequestDispatcher("/views/customer/index.jsp").forward(request, response);
+                forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
             } else {
-                // Default: Lay danh sach tat ca san pham
                 List<Product> products = productService.getAllProducts();
                 request.setAttribute("PRODUCT_LIST", products);
-                request.getRequestDispatcher("/views/customer/index.jsp").forward(request, response);
+                forwardToView(request, response, "/views/customer/index.jsp"); // Sử dụng hàm từ BaseServlet
             }
 
         } catch (Exception e) {
             request.setAttribute("ERROR", "Lỗi tải trang: " + e.getMessage());
-            request.getRequestDispatcher("/views/shared/error.jsp").forward(request, response);
+            forwardToView(request, response, "/views/shared/error.jsp"); // Sử dụng hàm từ BaseServlet
         }
     }
 }

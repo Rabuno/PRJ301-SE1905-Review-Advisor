@@ -1,21 +1,9 @@
 package adapters.controllers;
 
-import application.ports.IAlertRepository;
-import application.ports.IFileStoragePort;
-import application.ports.IReviewRepository;
-import application.ports.IUserRepository;
 import application.services.ReviewService;
-import application.services.TriageService;
-import domain.entities.Alert;
 import domain.entities.Review;
 import domain.entities.User;
-import infrastructure.ai.WekaProvider;
-import infrastructure.persistence.SqlAlertDAO;
-import infrastructure.persistence.SqlReviewDAO;
-import infrastructure.persistence.SqlUserDAO;
-import infrastructure.storage.LocalFileStorageAdapter;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -31,31 +19,17 @@ import javax.servlet.annotation.MultipartConfig;
         maxFileSize = 1024 * 1024 * 10, // 10MB
         maxRequestSize = 1024 * 1024 * 50 // 50MB
 )
-@WebServlet(name = "ReviewServlet", urlPatterns = { "/ReviewServlet" })
+@WebServlet(name = "ReviewServlet", urlPatterns = {"/ReviewServlet"})
 public class ReviewServlet extends BaseServlet {
 
     private ReviewService reviewService;
 
     @Override
     public void init() throws ServletException {
-        try {
-            IReviewRepository reviewDAO = new SqlReviewDAO();
-            IUserRepository userDAO = new SqlUserDAO();
-            
-            // ĐIỂM CẬP NHẬT 1: Chuyển đổi thư mục lưu trữ ra khỏi vùng cấm /WEB-INF
-            // Khởi tạo đường dẫn động tới thư mục /assets/uploads thuộc Web Root
-            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
-            IFileStoragePort storagePort = new LocalFileStorageAdapter(uploadDirPath);
+        this.reviewService = (ReviewService) getServletContext().getAttribute("ReviewService");
 
-            IAlertRepository alertDAO = new SqlAlertDAO(); 
-            String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
-            TriageService triageService = new TriageService(new WekaProvider(modelPath));
-
-            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ServletException("Lỗi khởi tạo ReviewServlet do Weka Model: " + e.getMessage());
+        if (this.reviewService == null) {
+            throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
         }
     }
 
@@ -80,7 +54,7 @@ public class ReviewServlet extends BaseServlet {
             try {
                 String reviewId = request.getParameter("reviewId");
                 String productId = request.getParameter("productId");
-                String source = request.getParameter("source"); 
+                String source = request.getParameter("source");
 
                 reviewService.deleteReview(reviewId);
                 request.getSession().setAttribute("SUCCESS_MSG", "Đã xóa đánh giá thành công!");
@@ -117,10 +91,22 @@ public class ReviewServlet extends BaseServlet {
             if (content == null) {
                 content = request.getParameter("txtContent");
             }
-            int rating = Integer.parseInt(request.getParameter("rating"));
+
+            // Xử lý lỗ hổng Parsing an toàn
+            int rating = 0;
+            try {
+                rating = Integer.parseInt(request.getParameter("rating"));
+                if (rating < 1 || rating > 5) {
+                    throw new NumberFormatException("Rating out of bounds");
+                }
+            } catch (NumberFormatException e) {
+                request.setAttribute("ERROR", "Dữ liệu xếp hạng không hợp lệ. Vui lòng chọn từ 1 đến 5 sao.");
+                forwardToView(request, response, "/views/customer/write-review.jsp");
+                return; // Ngắt luồng thực thi ngay lập tức
+            }
 
             // ĐIỂM CẬP NHẬT 2: Trích xuất giao diện nhị phân Part (Binary Extraction)
-            Part filePart = request.getPart("evidenceImage"); 
+            Part filePart = request.getPart("evidenceImage");
             InputStream imageStream = null;
             String extension = "";
 
@@ -136,16 +122,16 @@ public class ReviewServlet extends BaseServlet {
             if ("update".equals(action)) {
                 String existingReviewId = request.getParameter("reviewId");
                 Review updatedReview = new Review(existingReviewId, productId, currentUser.getUserId(), content, rating);
-                
+
                 // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
-                reviewService.submitReview(updatedReview, currentUser.getUsername(), imageStream, extension); 
+                reviewService.submitReview(updatedReview, currentUser.getUsername(), imageStream, extension);
 
                 request.getSession().setAttribute("SUCCESS_MSG", "Đánh giá của bạn đã được cập nhật thành công!");
                 redirect(request, response, "/MainController?action=MyReviews");
             } else {
                 String reviewId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
                 Review newReview = new Review(reviewId, productId, currentUser.getUserId(), content, rating);
-                
+
                 // ĐIỂM CẬP NHẬT 3: Ủy quyền toàn bộ luồng xử lý cho ReviewService
                 reviewService.submitReview(newReview, currentUser.getUsername(), imageStream, extension);
 

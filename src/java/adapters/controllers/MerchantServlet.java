@@ -43,22 +43,12 @@ public class MerchantServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        try {
-            IReviewRepository reviewDAO = new SqlReviewDAO();
-            IUserRepository userDAO = new SqlUserDAO();
-            IAlertRepository alertDAO = new SqlAlertDAO();
-            IProductRepository productDAO = new SqlProductDAO();
-
-            String uploadDirPath = getServletContext().getRealPath("/assets/uploads");
-            IFileStoragePort storagePort = new LocalFileStorageAdapter(uploadDirPath);
-
-            String modelPath = getServletContext().getRealPath("/WEB-INF/model/spam_review_classifier.model");
-            TriageService triageService = new TriageService(new WekaProvider(modelPath));
-
-            this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
-            this.productService = new ProductService(productDAO);
-        } catch (Exception e) {
-            throw new javax.servlet.ServletException("Loi khoi tao MerchantServlet: " + e.getMessage());
+        // Lấy các Singleton Service đã được AppConfigListener khởi tạo
+        this.reviewService = (ReviewService) getServletContext().getAttribute("ReviewService");
+        this.productService = (ProductService) getServletContext().getAttribute("ProductService");
+        
+        if (this.reviewService == null || this.productService == null) {
+            throw new ServletException("Hệ thống chưa nạp được các Service phụ thuộc.");
         }
     }
 

@@ -59,17 +59,12 @@ public class ReviewService {
         }
 
         // 3. Lưu trữ Đánh giá
-        boolean isReviewSaved = reviewRepository.save(review);
-
-        // 4. Lưu trữ Gói Cảnh báo (Nếu có)
-        if (isReviewSaved && alert != null) {
-            try {
-                alertRepository.saveAlert(alert);
-            } catch (Exception e) {
-                System.err.println("Lỗi lưu Alert: " + e.getMessage());
-            }
+        boolean isSaved = reviewRepository.saveReviewWithAlert(review, alert);
+        if (!isSaved) {
+            System.err.println("Giao dịch CSDL thất bại đối với Review ID: " + review.getReviewId());
+            // Có thể bổ sung cơ chế Retry hoặc thông báo lỗi cho người dùng ở đây
         }
-        return isReviewSaved;
+        return isSaved;
     }
 
     // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ---

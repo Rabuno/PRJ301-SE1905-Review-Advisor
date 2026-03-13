@@ -8,6 +8,8 @@ public interface IReviewRepository {
 
     boolean save(Review review);
 
+    boolean saveReviewWithAlert(domain.entities.Review review, domain.entities.Alert alert);
+
     void updateStatus(String reviewId, ReviewStatus newStatus);
 
     Review findById(String reviewId);
@@ -27,6 +29,6 @@ public interface IReviewRepository {
     List<Review> getRecentReviewsByMerchant(String merchantId, int limit);
 
     int countRecentReviewsByUser(String userId, int hours);
-    
+
     List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts();
 }
