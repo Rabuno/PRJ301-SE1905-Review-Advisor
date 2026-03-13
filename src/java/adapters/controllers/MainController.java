@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "MainController", urlPatterns = { "/MainController" })
+@WebServlet(name = "MainController", urlPatterns = {"/MainController"})
 public class MainController extends HttpServlet {
 
     private ProductService productService;
@@ -53,8 +53,8 @@ public class MainController extends HttpServlet {
             this.reviewService = new ReviewService(reviewDAO, userDAO, alertDAO, triageService, storagePort);
             this.productService = new ProductService(productDAO);
 
-        } catch (Exception e) {
-            throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + e.getMessage());
+        } catch (Exception t) {
+            throw new javax.servlet.ServletException("Lỗi nạp Model tại ModeratorServlet: " + t.getMessage());
         }
     }
 
@@ -71,8 +71,26 @@ public class MainController extends HttpServlet {
                 List<Review> reviews = reviewService.getReviewsByProduct(productId);
 
                 if (product != null) {
+                    int totalReviews = 0;
+                    double averageRating = 0.0;
+                    int[] starCounts = new int[6]; // Index 1-5 đại diện cho 1-5 sao, index 0 bỏ qua
+
+                    if (reviews != null && !reviews.isEmpty()) {
+                        totalReviews = reviews.size();
+                        double totalStars = 0;
+                        for (Review r : reviews) {
+                            totalStars += r.getRating();
+                            if (r.getRating() >= 1 && r.getRating() <= 5) {
+                                starCounts[r.getRating()]++;
+                            }
+                        }
+                        averageRating = totalStars / totalReviews;
+                    }
                     request.setAttribute("PRODUCT", product);
                     request.setAttribute("REVIEWS", reviews);
+                    request.setAttribute("TOTAL_REVIEWS", totalReviews);
+                    request.setAttribute("AVERAGE_RATING", String.format("%.1f", averageRating));
+                    request.setAttribute("STAR_COUNTS", starCounts);
                     request.getRequestDispatcher("/views/customer/product-detail.jsp").forward(request, response);
                 } else {
                     request.setAttribute("ERROR", "Product not found!");
@@ -94,7 +112,7 @@ public class MainController extends HttpServlet {
                 String category = request.getParameter("category");
                 List<Product> products;
                 if (category != null && !category.trim().isEmpty()) {
-                    products = productService.getProductsByCategory(category.trim());
+                    products = productService.findByCategory(category.trim());
                     request.setAttribute("ACTIVE_CATEGORY", category.trim()); // UI dung de highlight tab dang chon
                 } else {
                     products = productService.getAllProducts();

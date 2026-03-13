@@ -12,8 +12,9 @@
                 <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3 d-block"></i>
                 <p class="mb-0 text-muted">
                     <c:choose>
-                        <c:when test="${not empty requestScope.ERROR_MESSAGE}">
-                            ${requestScope.ERROR_MESSAGE}
+                        <%-- Sửa lại điều kiện test ở đây cho đồng bộ với tên biến ERROR --%>
+                        <c:when test="${not empty requestScope.ERROR}">
+                            <strong class="text-danger">${requestScope.ERROR}</strong>
                         </c:when>
                         <c:otherwise>
                             Your request could not be processed at this time. Please try again later.

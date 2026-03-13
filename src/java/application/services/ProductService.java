@@ -18,6 +18,10 @@ public class ProductService {
     public Product getProductById(String productId) {
         return productRepository.findById(productId);
     }
+    
+    public List<Product> findByCategory(String category) {
+        return productRepository.findByCategory(category);
+    }
 
     public int countPropertiesByMerchant(String merchantId) {
         return productRepository.countByMerchantId(merchantId);

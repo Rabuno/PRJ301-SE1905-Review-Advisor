@@ -86,7 +86,9 @@ public class SqlProductDAO implements IProductRepository {
     @Override
     public Product findById(String productId) {
         String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url "
-                + "FROM Products WHERE product_id = ?";
+                + "FROM Products "
+                + "WHERE product_id = ? "
+                + "AND status != 'DEACTIVATED'";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, productId);
@@ -129,8 +131,12 @@ public class SqlProductDAO implements IProductRepository {
     public boolean update(Product product) {
         boolean hasImage = product.getImageUrl() != null && !product.getImageUrl().isEmpty();
         String sql = hasImage
-                ? "UPDATE Products SET name=?, category=?, description=?, price=?, image_url=?, status=? WHERE product_id=? AND merchant_id=?"
-                : "UPDATE Products SET name=?, category=?, description=?, price=?, status=? WHERE product_id=? AND merchant_id=?";
+                ? "UPDATE Products SET name=?, category=?, description=?, price=?, image_url=?, status=? "
+                + "WHERE product_id=? "
+                + "AND merchant_id=?"
+                : "UPDATE Products SET name=?, category=?, description=?, price=?, status=? "
+                + "WHERE product_id=? "
+                + "AND merchant_id=?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, product.getName());
@@ -157,5 +163,28 @@ public class SqlProductDAO implements IProductRepository {
             e.printStackTrace();
             throw new RuntimeException("update() failed: " + e.getMessage(), e);
         }
+    }
+    
+    public List<Product> findByCategory(String category) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT product_id, name, category, description, price, merchant_id, image_url, status "
+                + "FROM Products "
+                + "WHERE category = ? "
+                + "AND state != 'DEACTIVATED"
+                + "ORDER BY created_at DESC";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, category);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setStatus(domain.enums.ProductStatus.valueOf(rs.getString("status")));
+                    list.add(p);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
