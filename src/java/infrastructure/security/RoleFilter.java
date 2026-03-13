@@ -50,6 +50,25 @@ public class RoleFilter implements Filter {
 
         User user = (User) session.getAttribute("USER");
 
+        // Admin console endpoints
+        if ((uri.contains("/Admin/") || uri.contains("/views/admin/")) && !"ADMIN".equals(user.getRole())) {
+            res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
+            return;
+        }
+
+        // Prevent direct access to JSP views by role (defense-in-depth).
+        if (uri.contains("/views/moderation/") && !user.hasPermission("PERM_MODERATE_ACTION")
+                && !"ADMIN".equals(user.getRole())) {
+            res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
+            return;
+        }
+
+        if (uri.contains("/views/merchant/") && !"MERCHANT".equals(user.getRole())
+                && !"ADMIN".equals(user.getRole())) {
+            res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");
+            return;
+        }
+
         if (uri.contains("/ModeratorServlet") && !user.hasPermission("PERM_MODERATE_ACTION")
                 && !"ADMIN".equals(user.getRole())) {
             res.sendRedirect(contextPath + "/views/shared/accessDenied.jsp");

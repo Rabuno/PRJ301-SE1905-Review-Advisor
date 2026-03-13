@@ -4,6 +4,7 @@ import application.ports.IRoleRepository;
 import domain.entities.Permission;
 import domain.entities.Role;
 import domain.entities.User;
+import infrastructure.persistence.SqlUserDAO;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,7 +44,8 @@ public class RolePermissionServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!"ADMIN".equals(user.getRole()) && !user.hasPermission("PERM_AI_RETRAIN") && !user.getUsername().equals("admin")) {
+        // Admin-only: changing role permissions is a privileged action.
+        if (!"ADMIN".equals(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }
@@ -75,7 +77,7 @@ public class RolePermissionServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("USER");
-        if (!"ADMIN".equals(user.getRole()) && !user.hasPermission("PERM_AI_RETRAIN") && !user.getUsername().equals("admin")) {
+        if (!"ADMIN".equals(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/views/shared/accessDenied.jsp");
             return;
         }
@@ -97,6 +99,8 @@ public class RolePermissionServlet extends HttpServlet {
         boolean success = roleRepository.updateRolePermissions(roleIdToUpdate, permissionIds);
 
         if (success) {
+            // Permissions are cached by role_id for faster logins; invalidate on change.
+            SqlUserDAO.invalidatePermissionCache();
             request.getSession().setAttribute("SUCCESS", "Permissions updated successfully for role.");
         } else {
             request.getSession().setAttribute("ERROR", "Failed to update permissions.");

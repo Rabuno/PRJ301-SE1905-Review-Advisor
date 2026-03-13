@@ -186,8 +186,7 @@ INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description
 ('ALT_001', 'đặt phòng giá rẻ', 0.3840, N'Tín hiệu lừa đảo môi giới du lịch trái phép (38.4%).'),
 ('ALT_001', 'chiết khấu', 0.2510, N'Từ khóa bất thường trong văn cảnh review trải nghiệm (25.1%).');
 INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value) VALUES 
-('ALT_001', 'ACCOUNT_AGE', 2.0, 30.0),
-('ALT_001', 'BURST_RATE', 3.0, 5.0);
+('ALT_001', 'ACCOUNT_AGE', 2.0, 30.0);
 
 INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_002', 'R_004', 0.9420, 'OPEN');
 INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES 
@@ -201,16 +200,10 @@ INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_003', 
 INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES
 ('ALT_003', 'external_link', 0.4500, N'Chứa đường dẫn/quảng cáo (spam).'),
 ('ALT_003', 'spam_keyword', 0.2500, N'Từ khóa quảng cáo/câu kéo.');
-INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value) VALUES
-('ALT_003', 'ACCOUNT_AGE', 12.0, 30.0),
-('ALT_003', 'BURST_RATE', 6.0, 5.0);
 
 INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES ('ALT_004', 'R_008', 0.9100, 'OPEN');
 INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES
 ('ALT_004', 'profanity', 0.6000, N'Ngôn từ thô tục/vi phạm tiêu chuẩn cộng đồng.');
-INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value) VALUES
-('ALT_004', 'ACCOUNT_AGE', 60.0, 30.0),
-('ALT_004', 'BURST_RATE', 1.0, 5.0);
 
 INSERT INTO AuditLog (audit_id, actor_user_id, action, diff_json, previous_hash, current_hash) VALUES 
 ('GENESIS_001', 'SYSTEM', 'SYSTEM_INIT', '{}', '0000000000000000000000000000000000000000000000000000000000000000', '1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f');
@@ -218,11 +211,12 @@ INSERT INTO AuditLog (audit_id, actor_user_id, action, diff_json, previous_hash,
 -- 4. INDEXES (Performance)
 CREATE INDEX IX_Users_RoleId ON Users(role_id);
 CREATE INDEX IX_Products_Status_Created ON Products(status, created_at);
-CREATE INDEX IX_Products_Category_Status ON Products(category, status);
 CREATE INDEX IX_Products_Merchant_Created ON Products(merchant_id, created_at);
 CREATE INDEX IX_Reviews_Product_Status_Created ON Reviews(product_id, status, created_at);
 CREATE INDEX IX_Reviews_User_Created ON Reviews(user_id, created_at);
 CREATE INDEX IX_Alerts_Status_Created ON Alerts(status, created_at);
+-- Common join path: Alerts -> Reviews (by review_id)
+CREATE INDEX IX_Alerts_ReviewId ON Alerts(review_id);
 CREATE INDEX IX_AlertReasons_AlertId ON AlertReasons(alert_id);
 CREATE INDEX IX_AlertEvidences_AlertId ON AlertEvidences(alert_id);
 CREATE INDEX IX_AuditLog_Actor_Timestamp ON AuditLog(actor_user_id, timestamp);

@@ -46,8 +46,8 @@ public class ReviewService {
     private boolean submitReviewAI(Review review, User user) {
         // 1. Thu thập Siêu dữ liệu (Metadata) cho Mô hình Đa biến
         double accountAgeDays = calculateAccountAge(user);
-        // Burst score shown on moderation dashboard as Reviews/30m
-        double burstRate = (double) reviewRepository.countRecentReviewsByUserMinutes(review.getUserId(), 30);
+        // Giả sử đếm số review trong 1 giờ qua để tính Burst Rate
+        double burstRate = (double) reviewRepository.countRecentReviewsByUser(review.getUserId(), 1);
 
         // 2. Chạy Trí tuệ Nhân tạo sàng lọc (AI Triage) an toàn
         Alert alert = null;
@@ -130,54 +130,5 @@ public class ReviewService {
     // Used by moderation UI to show full evidence pack (reasons/evidences) for a review.
     public Alert getAlertByReviewId(String reviewId) {
         return alertRepository.findByReviewId(reviewId);
-    }
-
-    // --- Evidence pack helpers (moderation UX) ---
-    public int countExactDuplicates(String reviewId, String content) {
-        return reviewRepository.countDuplicatesByExactContent(reviewId, content);
-    }
-
-    public int countEdits(String reviewId) {
-        return reviewRepository.countEditsByReview(reviewId);
-    }
-
-    /**
-     * Ensures a FLAGGED review has an Alert with Reasons + Evidence saved,
-     * so the moderator evidence modal never shows N/A for core signals.
-     * This is a safe backfill for legacy/seed data.
-     */
-    public Alert ensureAlertForFlaggedReview(Review review) {
-        if (review == null || review.getStatus() != ReviewStatus.FLAGGED) return null;
-
-        Alert existing = alertRepository.findByReviewId(review.getReviewId());
-        boolean missingReasons = existing == null || existing.getReasons() == null || existing.getReasons().isEmpty();
-        boolean missingEvidence = existing == null || existing.getEvidences() == null || existing.getEvidences().isEmpty();
-        boolean missingCoreEvidence = false;
-        if (!missingEvidence) {
-            boolean hasAccountAge = false;
-            boolean hasBurst = false;
-            for (Alert.AlertEvidence ev : existing.getEvidences()) {
-                if (ev == null || ev.getRuleType() == null) continue;
-                if ("ACCOUNT_AGE".equals(ev.getRuleType())) hasAccountAge = true;
-                if ("BURST_RATE".equals(ev.getRuleType())) hasBurst = true;
-            }
-            missingCoreEvidence = !hasAccountAge || !hasBurst;
-        }
-
-        // If we already have a full evidence pack, no backfill needed.
-        if (!missingReasons && !missingEvidence && !missingCoreEvidence) return existing;
-
-        User reviewOwner = userRepository.findById(review.getUserId());
-        double accountAgeDays = calculateAccountAge(reviewOwner);
-        double burstRate = (double) reviewRepository.countRecentReviewsByUserMinutes(review.getUserId(), 30);
-
-        // Build alert for moderation purposes (always returns an alert, doesn't change status).
-        Alert rebuilt = triageService.buildAlertForModeration(review, accountAgeDays, burstRate);
-
-        // Persist using the atomic upsert used in normal submit flow.
-        boolean saved = reviewRepository.saveReviewWithAlert(review, rebuilt);
-        if (!saved) return existing; // fall back to whatever we had
-
-        return alertRepository.findByReviewId(review.getReviewId());
     }
 }

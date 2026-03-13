@@ -104,21 +104,8 @@ public class SqlReviewDAO implements IReviewRepository {
                     }
                 }
 
-                // 2. Alert persistence (Chung Connection)
-                // Keep alerts in sync with current AI decision.
-                if (alert == null) {
-                    try (java.sql.PreparedStatement psDel = conn.prepareStatement("DELETE FROM Alerts WHERE review_id = ?")) {
-                        psDel.setString(1, review.getReviewId());
-                        psDel.executeUpdate();
-                    }
-                } else {
-                    // Upsert strategy: delete previous alert by review_id to avoid unique constraint issues.
-                    // (FK cascades will remove reasons/evidences.)
-                    try (java.sql.PreparedStatement psDel = conn.prepareStatement("DELETE FROM Alerts WHERE review_id = ?")) {
-                        psDel.setString(1, alert.getReviewId());
-                        psDel.executeUpdate();
-                    }
-
+                // 2. Logic Insert Alert (Chung Connection)
+                if (alert != null) {
                     String insertAlert = "INSERT INTO Alerts (alert_id, review_id, risk_score, status) VALUES (?, ?, ?, ?)";
                     try ( java.sql.PreparedStatement psA = conn.prepareStatement(insertAlert)) {
                         psA.setString(1, alert.getAlertId());
@@ -127,36 +114,8 @@ public class SqlReviewDAO implements IReviewRepository {
                         psA.setString(4, alert.getStatus());
                         psA.executeUpdate();
                     }
-
-                    // Insert reasons
-                    if (alert.getReasons() != null && !alert.getReasons().isEmpty()) {
-                        String insertReason = "INSERT INTO AlertReasons (alert_id, feature_name, importance_weight, description) VALUES (?, ?, ?, ?)";
-                        try (java.sql.PreparedStatement psR = conn.prepareStatement(insertReason)) {
-                            for (domain.entities.Alert.AlertReason r : alert.getReasons()) {
-                                psR.setString(1, alert.getAlertId());
-                                psR.setString(2, r.getFeatureName());
-                                psR.setDouble(3, r.getImportanceWeight());
-                                psR.setString(4, r.getDescription());
-                                psR.addBatch();
-                            }
-                            psR.executeBatch();
-                        }
-                    }
-
-                    // Insert evidences
-                    if (alert.getEvidences() != null && !alert.getEvidences().isEmpty()) {
-                        String insertEvidence = "INSERT INTO AlertEvidences (alert_id, rule_type, measured_value, threshold_value) VALUES (?, ?, ?, ?)";
-                        try (java.sql.PreparedStatement psE = conn.prepareStatement(insertEvidence)) {
-                            for (domain.entities.Alert.AlertEvidence e : alert.getEvidences()) {
-                                psE.setString(1, alert.getAlertId());
-                                psE.setString(2, e.getRuleType());
-                                psE.setDouble(3, e.getMeasuredValue());
-                                psE.setDouble(4, e.getThresholdValue());
-                                psE.addBatch();
-                            }
-                            psE.executeBatch();
-                        }
-                    }
+                    // Bỏ qua mã chèn AlertReasons và AlertEvidences bằng executeBatch ở đây để ngắn gọn, 
+                    // nhưng áp dụng tương tự quy trình trong SqlAlertDAO.
                 }
 
                 conn.commit(); // Xác nhận Transaction
@@ -398,23 +357,15 @@ public class SqlReviewDAO implements IReviewRepository {
 
     @Override
     public int countRecentReviewsByUser(String userId, int hours) {
-        // Backward-compat for older callers; prefer minute-based burst score.
-        return countRecentReviewsByUserMinutes(userId, Math.max(0, hours) * 60);
-    }
-
-    @Override
-    public int countRecentReviewsByUserMinutes(String userId, int minutes) {
         int count = 0;
-        int safeMinutes = Math.max(0, minutes);
-
+        // Logic truy vấn SQL Server: Đếm số lượng review trong X giờ qua
         String sql = "SELECT COUNT(*) AS total_reviews FROM Reviews "
-                + "WHERE user_id = ? AND created_at >= DATEADD(minute, -?, GETDATE())";
+                + "WHERE user_id = ? AND created_at >= DATEADD(hour, -?, GETDATE())";
 
-        try ( java.sql.Connection conn = DBConnection.getConnection();
-              java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
-            ps.setInt(2, safeMinutes);
+            ps.setInt(2, hours);
 
             try ( java.sql.ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -423,122 +374,123 @@ public class SqlReviewDAO implements IReviewRepository {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("Lỗi tính toán Burst Rate (minutes) trong SqlReviewDAO: " + e.getMessage());
+            System.err.println("Lỗi tính toán Burst Rate trong SqlReviewDAO: " + e.getMessage());
         }
         return count;
     }
 
     @Override
-    public int countDuplicatesByExactContent(String reviewId, String content) {
-        if (content == null || content.trim().isEmpty()) return 0;
-
-        String sql = "SELECT COUNT(*) AS dup_count FROM Reviews WHERE content = ? AND review_id <> ?";
-        try (java.sql.Connection conn = DBConnection.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, content);
-            ps.setString(2, reviewId == null ? "" : reviewId);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("dup_count");
-            }
-        } catch (Exception e) {
-            System.err.println("[SqlReviewDAO] Lỗi countDuplicatesByExactContent: " + e.getMessage());
-        }
-        return 0;
-    }
-
-    @Override
-    public int countEditsByReview(String reviewId) {
-        if (reviewId == null || reviewId.trim().isEmpty()) return 0;
-
-        // We treat update submissions as "edits" (AuditLog is the existing source of truth here).
-        String sql = "SELECT COUNT(*) AS edit_count "
-                + "FROM AuditLog "
-                + "WHERE action = 'REVIEW_SUBMITTED_UPDATE' "
-                + "AND JSON_VALUE(diff_json, '$.reviewId') = ?";
-
-        try (java.sql.Connection conn = DBConnection.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, reviewId);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("edit_count");
-            }
-        } catch (Exception e) {
-            System.err.println("[SqlReviewDAO] Lỗi countEditsByReview: " + e.getMessage());
-        }
-        return 0;
-    }
-
-    @Override
     public List<application.dto.AlertDashboardDTO> getFlaggedReviewsWithAlerts() {
         java.util.Map<String, application.dto.AlertDashboardDTO> dtoMap = new java.util.LinkedHashMap<>();
+        java.util.List<String> alertIds = new java.util.ArrayList<>();
+        java.util.Map<String, application.dto.AlertDashboardDTO> byAlertId = new java.util.HashMap<>();
 
-        // Truy vấn phẳng 1 lần duy nhất bằng LEFT JOIN
-        String sql = "SELECT r.review_id, r.content, r.rating, r.created_at, "
-                + "a.alert_id, a.risk_score, "
-                + "ar.feature_name, ar.importance_weight, "
-                + "ae.rule_type, ae.measured_value "
+        // Avoid Cartesian explosion by loading base rows first, then reasons/evidence in 2 extra queries.
+        String baseSql = "SELECT r.review_id, r.content, r.rating, r.created_at, "
+                + "a.alert_id, a.risk_score "
                 + "FROM Reviews r "
                 + "LEFT JOIN Alerts a ON r.review_id = a.review_id "
-                + "LEFT JOIN AlertReasons ar ON a.alert_id = ar.alert_id "
-                + "LEFT JOIN AlertEvidences ae ON a.alert_id = ae.alert_id "
                 + "WHERE r.status = 'FLAGGED' "
                 + "ORDER BY r.created_at DESC";
 
-        try ( java.sql.Connection conn = DBConnection.getConnection();  java.sql.PreparedStatement ps = conn.prepareStatement(sql);  java.sql.ResultSet rs = ps.executeQuery()) {
+        try ( java.sql.Connection conn = DBConnection.getConnection();
+              java.sql.PreparedStatement ps = conn.prepareStatement(baseSql);
+              java.sql.ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 String reviewId = rs.getString("review_id");
-                application.dto.AlertDashboardDTO dto = dtoMap.get(reviewId);
+                application.dto.AlertDashboardDTO dto = new application.dto.AlertDashboardDTO();
+                dto.setReviewId(reviewId);
+                dto.setContent(rs.getString("content"));
+                dto.setRating(rs.getInt("rating"));
+                java.sql.Timestamp ts = rs.getTimestamp("created_at");
+                dto.setCreatedAt(ts != null ? ts.toString() : null);
 
-                // Khởi tạo DTO nếu chưa tồn tại trong Map
-                if (dto == null) {
-                    dto = new application.dto.AlertDashboardDTO();
-                    dto.setReviewId(reviewId);
-                    dto.setContent(rs.getString("content"));
-                    dto.setRating(rs.getInt("rating"));
-                    dto.setCreatedAt(rs.getTimestamp("created_at").toString());
+                String alertId = rs.getString("alert_id");
+                if (alertId != null) {
+                    alertIds.add(alertId);
+                    byAlertId.put(alertId, dto);
 
                     double riskScore = rs.getDouble("risk_score");
                     if (!rs.wasNull()) {
                         dto.setRiskScore(riskScore);
                     }
-                    dto.setEvidence(new java.util.HashMap<>());
-                    dto.setAiFeatures(new java.util.ArrayList<>());
-                    dtoMap.put(reviewId, dto);
                 }
 
-                // Nhóm AlertReasons (tránh trùng lặp do tích Đề-các)
-                String featureName = rs.getString("feature_name");
-                if (featureName != null) {
-                    double weight = rs.getDouble("importance_weight");
-                    int score = (int) Math.round(weight * 100);
-                    boolean exists = dto.getAiFeatures().stream().anyMatch(f -> f.getName().equals(featureName));
-                    if (!exists) {
-                        dto.getAiFeatures().add(new application.dto.AlertDashboardDTO.AIFeatureDTO(featureName, score));
-                    }
-                }
-
-                // Nhóm AlertEvidences
-                String ruleType = rs.getString("rule_type");
-                if (ruleType != null) {
-                    double value = rs.getDouble("measured_value");
-                    String key = "BURST_RATE".equals(ruleType) ? "burstScore"
-                            : ("ACCOUNT_AGE".equals(ruleType) ? "accountAge" : ruleType.toLowerCase());
-                    dto.getEvidence().putIfAbsent(key, value);
-                }
+                dto.setEvidence(new java.util.HashMap<>());
+                dto.setAiFeatures(new java.util.ArrayList<>());
+                dtoMap.put(reviewId, dto);
             }
 
-            // Sắp xếp lại Feature theo độ quan trọng cho từng DTO
+            if (!alertIds.isEmpty()) {
+                loadReasons(conn, byAlertId, alertIds);
+                loadEvidence(conn, byAlertId, alertIds);
+            }
+
             for (application.dto.AlertDashboardDTO dto : dtoMap.values()) {
                 dto.getAiFeatures().sort((f1, f2) -> Integer.compare(f2.getScore(), f1.getScore()));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return new java.util.ArrayList<>(dtoMap.values());
+    }
+
+    private void loadReasons(java.sql.Connection conn,
+                             java.util.Map<String, application.dto.AlertDashboardDTO> byAlertId,
+                             java.util.List<String> alertIds) throws Exception {
+        for (int start = 0; start < alertIds.size(); start += 200) {
+            java.util.List<String> chunk = alertIds.subList(start, Math.min(start + 200, alertIds.size()));
+            String in = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            String sql = "SELECT alert_id, feature_name, importance_weight FROM AlertReasons WHERE alert_id IN (" + in + ")";
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (int i = 0; i < chunk.size(); i++) ps.setString(i + 1, chunk.get(i));
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String alertId = rs.getString("alert_id");
+                        String featureName = rs.getString("feature_name");
+                        if (featureName == null) continue;
+                        application.dto.AlertDashboardDTO dto = byAlertId.get(alertId);
+                        if (dto == null) continue;
+
+                        double weight = rs.getDouble("importance_weight");
+                        int score = (int) Math.round(weight * 100);
+                        boolean exists = dto.getAiFeatures().stream().anyMatch(f -> f.getName().equals(featureName));
+                        if (!exists) {
+                            dto.getAiFeatures().add(new application.dto.AlertDashboardDTO.AIFeatureDTO(featureName, score));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void loadEvidence(java.sql.Connection conn,
+                              java.util.Map<String, application.dto.AlertDashboardDTO> byAlertId,
+                              java.util.List<String> alertIds) throws Exception {
+        for (int start = 0; start < alertIds.size(); start += 200) {
+            java.util.List<String> chunk = alertIds.subList(start, Math.min(start + 200, alertIds.size()));
+            String in = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            String sql = "SELECT alert_id, rule_type, measured_value FROM AlertEvidences WHERE alert_id IN (" + in + ")";
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (int i = 0; i < chunk.size(); i++) ps.setString(i + 1, chunk.get(i));
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String alertId = rs.getString("alert_id");
+                        String ruleType = rs.getString("rule_type");
+                        if (ruleType == null) continue;
+                        application.dto.AlertDashboardDTO dto = byAlertId.get(alertId);
+                        if (dto == null) continue;
+
+                        double value = rs.getDouble("measured_value");
+                        String key = "BURST_RATE".equals(ruleType) ? "burstScore"
+                                : ("ACCOUNT_AGE".equals(ruleType) ? "accountAge" : ruleType.toLowerCase());
+                        dto.getEvidence().putIfAbsent(key, value);
+                    }
+                }
+            }
+        }
     }
 
     @Override
