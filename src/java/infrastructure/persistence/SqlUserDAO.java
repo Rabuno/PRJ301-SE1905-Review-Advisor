@@ -5,7 +5,6 @@ import domain.entities.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.Timestamp;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -13,7 +12,6 @@ public class SqlUserDAO implements IUserRepository {
 
     @Override
     public User findByUsername(String username) {
-
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
@@ -25,22 +23,22 @@ public class SqlUserDAO implements IUserRepository {
                 + "LEFT JOIN Permissions p ON rp.permission_id = p.permission_id "
                 + "WHERE u.username = ?";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
 
-            try ( ResultSet rs = stmt.executeQuery()) {
-
+            try (ResultSet rs = stmt.executeQuery()) {
                 User user = null;
                 Set<String> permissions = new LinkedHashSet<>();
 
                 while (rs.next()) {
-
                     if (user == null) {
                         user = new User(
                                 rs.getString("user_id"),
                                 rs.getString("username"),
-                                rs.getString("password"));
+                                rs.getString("password")
+                        );
                         user.setRoleId(rs.getString("role_id"));
                         user.setRole(rs.getString("role_name"));
 
@@ -61,11 +59,10 @@ public class SqlUserDAO implements IUserRepository {
                     return user;
                 }
             }
-
         } catch (Exception e) {
-            throw new RuntimeException("Failed to authenticate user", e);
+            System.err.println("[SqlUserDAO] Lỗi tại findByUsername: " + e.getMessage());
+            throw new RuntimeException("Lỗi truy xuất dữ liệu người dùng", e);
         }
-
         return null;
     }
 
@@ -75,10 +72,12 @@ public class SqlUserDAO implements IUserRepository {
             throw new IllegalArgumentException("User and roleName cannot be null");
         }
 
+        // Khắc phục lỗ hổng Subquery
         String sql = "INSERT INTO Users (user_id, username, password, role_id) "
                 + "VALUES (?, ?, ?, (SELECT role_id FROM Roles WHERE role_name = ?))";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUserId());
             stmt.setString(2, user.getUsername());
@@ -88,7 +87,12 @@ public class SqlUserDAO implements IUserRepository {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
+        } catch (SQLException e) {
+            // Không nuốt ngoại lệ, in lỗi rõ ràng để debug (VD: lỗi duplicate key)
+            System.err.println("[SqlUserDAO] SQL Lỗi chèn dữ liệu registerUser: " + e.getMessage());
+            return false;
         } catch (Exception e) {
+            System.err.println("[SqlUserDAO] Hệ thống lỗi tại registerUser: " + e.getMessage());
             return false;
         }
     }
@@ -96,18 +100,27 @@ public class SqlUserDAO implements IUserRepository {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, password, role_id, created_at FROM Users";
+        // Khắc phục khuyết thiếu dữ liệu bằng INNER JOIN
+        String sql = "SELECT u.user_id, u.username, u.password, u.role_id, r.role_name, u.created_at "
+                   + "FROM Users u "
+                   + "INNER JOIN Roles r ON u.role_id = r.role_id";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql);  ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 User user = new User(
                         rs.getString("user_id"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role_id"));
+                        rs.getString("role_id")
+                );
+                
+                // Nạp thêm vai trò để tránh NullPointerException trên View
+                user.setRole(rs.getString("role_name"));
 
-                java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                Timestamp createdAt = rs.getTimestamp("created_at");
                 if (createdAt != null) {
                     user.setCreatedAt(createdAt.toLocalDateTime());
                 }
@@ -115,30 +128,29 @@ public class SqlUserDAO implements IUserRepository {
                 users.add(user);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("[SqlUserDAO] Lỗi tại getAllUsers: " + e.getMessage());
         }
         return users;
     }
 
     @Override
     public boolean updateUserRole(String userId, String roleId) {
-
         if (userId == null || roleId == null) {
             throw new IllegalArgumentException("UserId and roleId cannot be null");
         }
 
         String sql = "UPDATE Users SET role_id = ? WHERE user_id = ?";
 
-        try ( Connection conn = DBConnection.getConnection();  PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, roleId);
             stmt.setString(2, userId);
 
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
+            return stmt.executeUpdate() > 0;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("[SqlUserDAO] Lỗi tại updateUserRole: " + e.getMessage());
             return false;
         }
     }

@@ -84,6 +84,7 @@ public class MainController extends BaseServlet { // Kế thừa BaseServlet
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             request.setAttribute("ERROR", "Lỗi tải trang: " + e.getMessage());
             forwardToView(request, response, "/views/shared/error.jsp"); // Sử dụng hàm từ BaseServlet
         }
